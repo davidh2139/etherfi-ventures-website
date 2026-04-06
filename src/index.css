@@ -1,0 +1,109 @@
+/* White navigation links on dark background */
+nav a,
+header a,
+.nav-link,
+.menu-item,
+a[href],
+button,
+.header-link,
+.top-nav a {
+  color: #ffffff !important;
+  text-decoration: none;
+}
+
+/* Optional: make nav text slightly brighter / hover effect */
+nav a:hover,
+header a:hover {
+  color: #29BCFA !important;
+}
+
+/* ============== GLOBAL DARK MATRIX BACKGROUND (all pages) ============== */
+body {
+  background: #0a0a1f !important;
+  margin: 0;
+}
+
+/* ============== EXACT GLITCH (Archivo Black) — 50% SLOWER ============== */
+@import url('https://fonts.googleapis.com/css?family=Archivo+Black');
+
+.glitch {
+  font-family: 'Archivo Black', sans-serif;
+  color: white;
+  position: relative;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0a0a1f;
+}
+
+.glitch::before {
+  left: 2px;
+  text-shadow: -2px 0 #49FC00;
+  clip: rect(24px, 550px, 90px, 0);
+  animation: glitch-anim-2 6s infinite linear alternate-reverse;   /* was 3s → now 6s */
+}
+
+.glitch::after {
+  left: -2px;
+  text-shadow: -2px 0 #FC0049;
+  clip: rect(85px, 550px, 140px, 0);
+  animation: glitch-anim 5s infinite linear alternate-reverse;     /* was 2.5s → now 5s */
+}
+
+/* (chaotic keyframes stay the same) */
+@keyframes glitch-anim {
+  0%    { clip: rect(12px, 9999px, 56px, 0); }
+  5%    { clip: rect(68px, 9999px, 22px, 0); }
+  10%   { clip: rect(42px, 9999px, 84px, 0); }
+  15%   { clip: rect(8px, 9999px, 45px, 0); }
+  20%   { clip: rect(95px, 9999px, 18px, 0); }
+  25%   { clip: rect(33px, 9999px, 72px, 0); }
+  30%   { clip: rect(55px, 9999px, 31px, 0); }
+  35%   { clip: rect(19px, 9999px, 88px, 0); }
+  40%   { clip: rect(71px, 9999px, 14px, 0); }
+  45%   { clip: rect(27px, 9999px, 65px, 0); }
+  50%   { clip: rect(82px, 9999px, 39px, 0); }
+  55%   { clip: rect(44px, 9999px, 76px, 0); }
+  60%   { clip: rect(9px, 9999px, 52px, 0); }
+  65%   { clip: rect(63px, 9999px, 25px, 0); }
+  70%   { clip: rect(37px, 9999px, 91px, 0); }
+  75%   { clip: rect(81px, 9999px, 47px, 0); }
+  80%   { clip: rect(15px, 9999px, 68px, 0); }
+  85%   { clip: rect(50px, 9999px, 29px, 0); }
+  90%   { clip: rect(73px, 9999px, 11px, 0); }
+  95%   { clip: rect(24px, 9999px, 83px, 0); }
+  100%  { clip: rect(66px, 9999px, 35px, 0); }
+}
+
+@keyframes glitch-anim-2 {
+  0%    { clip: rect(65px, 9999px, 120px, 0); }
+  5%    { clip: rect(8px, 9999px, 45px, 0); }
+  10%   { clip: rect(42px, 9999px, 84px, 0); }
+  15%   { clip: rect(12px, 9999px, 56px, 0); }
+  20%   { clip: rect(95px, 9999px, 18px, 0); }
+  25%   { clip: rect(33px, 9999px, 72px, 0); }
+  30%   { clip: rect(55px, 9999px, 31px, 0); }
+  35%   { clip: rect(19px, 9999px, 88px, 0); }
+  40%   { clip: rect(71px, 9999px, 14px, 0); }
+  45%   { clip: rect(27px, 9999px, 65px, 0); }
+  50%   { clip: rect(82px, 9999px, 39px, 0); }
+  55%   { clip: rect(44px, 9999px, 76px, 0); }
+  60%   { clip: rect(9px, 9999px, 52px, 0); }
+  65%   { clip: rect(63px, 9999px, 25px, 0); }
+  70%   { clip: rect(37px, 9999px, 91px, 0); }
+  75%   { clip: rect(81px, 9999px, 47px, 0); }
+  80%   { clip: rect(15px, 9999px, 68px, 0); }
+  85%   { clip: rect(50px, 9999px, 29px, 0); }
+  90%   { clip: rect(73px, 9999px, 11px, 0); }
+  95%   { clip: rect(24px, 9999px, 83px, 0); }
+  100%  { clip: rect(66px, 9999px, 35px, 0); }
+}
