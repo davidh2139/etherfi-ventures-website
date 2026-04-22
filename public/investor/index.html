@@ -78,7 +78,16 @@
           <p><strong class="text-slate-300">Pure equity</strong> (Symbiotic): single pro-rata claim on the round FDV. Current Mark = cash at cost when entry FDV equals current FDV; MOIC stays at 1.00x until a subsequent valuation signal moves.</p>
           <p><strong class="text-slate-300">Entry FDV</strong>: for strategic positions, blended FDV = cash ÷ combined allocation (reflects the effective entry price across paid + granted tranches). For non-strategic positions, Entry FDV equals the round FDV. For pure-equity positions, Entry FDV equals the round equity FDV.</p>
           <p><strong class="text-slate-300">Current FDV</strong>: live token FDV where a token trades publicly (price × total supply), otherwise the most recent round valuation. No markup is taken between rounds.</p>
-          <p><strong class="text-slate-300">Discounted Mark / Discounted MOIC</strong>: illiquidity discount of 30% per year of remaining lockup, compounded annually. Discount factor = 0.70<sup>y</sup> where y is years until full token unlock. For strategic positions the discount applies only to the locked token portion (equity at cost is not further discounted). For non-strategic positions the whole mark is discounted, since the entire mark derives from locked token FDV. Pure-equity positions use a flat 70% haircut in lieu of the vesting schedule.</p>
+          <p><strong class="text-slate-300">Discounted Mark / Discounted MOIC</strong>: applies a tiered discount for lack of marketability (DLOM) tranche-by-tranche to each vesting unlock, calibrated to Longstaff-style protective put option pricing model outputs at crypto-typical volatility (~80–140% annualized) per the Fund's ASC 820 / AICPA Valuation Guide (2019) policy.</p>
+          <div class="pl-4 text-xs text-slate-400 space-y-0.5">
+            <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-0.5 max-w-sm">
+              <span class="text-slate-500">0–1 year remaining</span><span class="font-mono">30%</span>
+              <span class="text-slate-500">1–2 years remaining</span><span class="font-mono">45%</span>
+              <span class="text-slate-500">2–3 years remaining</span><span class="font-mono">55%</span>
+              <span class="text-slate-500">3+ years remaining</span><span class="font-mono">65%</span>
+            </div>
+          </div>
+          <p class="text-slate-400">Each tranche receives the tier matching its specific remaining lockup; the portfolio's effective DLOM is the weighted average of those tier DLOMs by tranche size. Vested/liquid tokens receive no DLOM. For strategic positions the DLOM applies only to the locked token portion (equity held at cost is not further discounted); for non-strategic positions the whole mark is discounted since it derives entirely from locked-token FDV. Pure-equity positions use a per-position flat haircut documented as an exception, since policy does not apply DLOM to equity.</p>
           <p><strong class="text-slate-300">Vesting</strong>: computed from each position's contractual schedule against today's date. Charts show cumulative percent unlocked from TGE/effective date through full unlock.</p>
           <p><strong class="text-slate-300">Prices</strong>: fetched live from CoinGecko on page load. If the API is unavailable, last-known prices are used.</p>
         </div>

@@ -82,14 +82,56 @@
     return prices;
   }
 
-  // ---------- Illiquidity discount ----------
-  // Locked tokens are discounted at 30% per year remaining until full unlock
-  // (compounded). Vested/liquid tokens and equity held at cost are not discounted.
-  const DISCOUNT_RATE_PER_YEAR = 0.30;
+  // ---------- Illiquidity discount (DLOM) ----------
+  // Tiered discount for lack of marketability (DLOM) applied tranche-by-tranche
+  // to each vesting unlock based on its remaining restriction period. Table is
+  // calibrated to Longstaff-style protective put option pricing model outputs
+  // at crypto-typical volatility (~80–140% annualized). Per the Fund's approved
+  // valuation policy (ASC 820, AICPA Valuation Guide 2019).
+  const DLOM_TIERS = [
+    { maxYears: 1, dlom: 0.30 }, // 0–1 year remaining
+    { maxYears: 2, dlom: 0.45 }, // 1–2 years
+    { maxYears: 3, dlom: 0.55 }, // 2–3 years
+    { maxYears: Infinity, dlom: 0.65 }, // 3+ years
+  ];
+
+  function dlomForYears(years) {
+    for (const tier of DLOM_TIERS) {
+      if (years <= tier.maxYears) return tier.dlom;
+    }
+    return DLOM_TIERS[DLOM_TIERS.length - 1].dlom;
+  }
+
+  // Weighted DLOM across the vesting schedule. Each tranche — cliff unlock and
+  // each monthly unlock — receives the DLOM tier matching its remaining time
+  // to unlock; the weighted average of those DLOMs (by tranche size) is used.
+  function weightedDLOM(vesting, todayISO) {
+    if (!vesting) return 0;
+    // Pre-TGE (no startDate): assume TGE is today so the full schedule is ahead.
+    const elapsed = vesting.startDate ? monthsBetween(vesting.startDate, todayISO) : 0;
+
+    let totalWeight = 0;
+    let weightedSum = 0;
+
+    if (elapsed < vesting.cliffMonths && vesting.cliffPct > 0) {
+      const yearsToUnlock = (vesting.cliffMonths - elapsed) / 12;
+      weightedSum += vesting.cliffPct * dlomForYears(yearsToUnlock);
+      totalWeight += vesting.cliffPct;
+    }
+
+    const firstMonth = Math.max(vesting.cliffMonths + 1, elapsed + 1);
+    for (let m = firstMonth; m <= vesting.endMonths; m++) {
+      const yearsToUnlock = (m - elapsed) / 12;
+      weightedSum += vesting.monthlyPct * dlomForYears(yearsToUnlock);
+      totalWeight += vesting.monthlyPct;
+    }
+
+    return totalWeight > 0 ? weightedSum / totalWeight : 0;
+  }
 
   function yearsUntilFullUnlock(vesting, todayISO) {
     if (!vesting) return 0;
-    if (!vesting.startDate) return vesting.endMonths / 12; // pre-TGE: assume TGE today
+    if (!vesting.startDate) return vesting.endMonths / 12;
     const elapsed = monthsBetween(vesting.startDate, todayISO);
     const remaining = Math.max(0, vesting.endMonths - elapsed);
     return remaining / 12;
@@ -177,19 +219,25 @@
     //     the cash is already spent — the only future realizable value is
     //     the locked tokens unlocking at whatever price then prevails.
     if (pos.pureEquity) {
+      // Pure-equity positions use a per-position flat haircut (exception to
+      // the standard DLOM table, which does not apply to equity under policy).
       const flat = pos.flatDiscount ?? 0;
+      out.weightedDLOM = flat;
       out.discountFactor = 1 - flat;
       out.discountedTokenValue = null;
       out.discountedPositionMark = pos.cashDeployed * (1 - flat);
     } else {
-      const yearsLocked = yearsUntilFullUnlock(pos.vesting, todayISO);
-      const discountFactor = Math.pow(1 - DISCOUNT_RATE_PER_YEAR, yearsLocked);
-      out.yearsUntilFullUnlock = yearsLocked;
+      const dlom = weightedDLOM(pos.vesting, todayISO);
+      const discountFactor = 1 - dlom;
+      out.weightedDLOM = dlom;
       out.discountFactor = discountFactor;
       const vestedFrac = out.vestedFraction || 0;
+      // Vested tokens are liquid (no DLOM); locked tokens get the weighted DLOM.
       const blendedFactor = vestedFrac + (1 - vestedFrac) * discountFactor;
 
       if (pos.hasStrategicGrant) {
+        // Equity/cash held at cost is not further discounted; DLOM applies to
+        // the locked token portion only.
         let discountedTokenValue = null;
         if (out.currentTokenValue != null) {
           discountedTokenValue = out.currentTokenValue * blendedFactor;
@@ -206,6 +254,8 @@
             : pos.cashDeployed;
         }
       } else {
+        // Non-strategic: whole mark derives from locked token FDV, so DLOM
+        // applies to the entire mark.
         out.discountedPositionMark = (out.positionMark || 0) * blendedFactor;
       }
     }
@@ -253,7 +303,7 @@
       {
         label: 'Discounted Mark',
         value: fmtUSD(discountedMark, { compact: true }),
-        sub: '30%/yr illiquidity discount on locked tokens',
+        sub: 'Tiered DLOM on locked tokens (Longstaff POPM)',
       },
       {
         label: 'Discounted MOIC',
