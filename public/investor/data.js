@@ -1,6 +1,8 @@
 // Portfolio data. Edit here to update positions.
-// Strategic agreement mechanics intentionally omitted (NDA) —
-// we represent strategic allocations as position size only.
+// Where a strategic token grant accompanies a cash investment (Hyperbeat,
+// ETHGas), the two tranches are reported as a single "Investment" bucket:
+// cash deployed reflects only the paid portion; token allocation and
+// equity percentage aggregate paid + granted.
 
 window.PORTFOLIO = {
   fundName: 'ether.fi Ventures Fund I LP',
@@ -14,18 +16,18 @@ window.PORTFOLIO = {
 
   positions: [
     {
-      id: 'hyperbeat-inv',
+      id: 'hyperbeat',
       company: 'Hyperbeat',
       subtitle: 'Hyperliquid ecosystem · beHYPE LST',
-      position: 'Investment',
+      position: 'Seed',
       status: 'Pre-TGE',
       tokenLive: false,
       cashDeployed: 1_000_000,
-      tokenPct: 0.025,
+      tokenPct: 0.10, // 2.5% paid + 7.5% strategic grant
       tokenCount: null,
       entryTokenFDV: 40_000_000,
       hasEquity: true,
-      equityPct: 0.025,
+      equityPct: 0.10, // 2.5% paid + 7.5% strategic grant
       equityFDV: 40_000_000,
       vesting: {
         label: '12-month cliff (no release); 1/36 monthly thereafter to month 48',
@@ -36,36 +38,14 @@ window.PORTFOLIO = {
         endMonths: 48,
         tgeLabel: 'TGE pending',
       },
-    },
-    {
-      id: 'hyperbeat-strat',
-      company: 'Hyperbeat',
-      subtitle: 'Hyperliquid ecosystem · beHYPE LST',
-      position: 'Strategic Allocation',
-      status: 'Pre-TGE',
-      tokenLive: false,
-      cashDeployed: 0,
-      tokenPct: 0.075,
-      tokenCount: null,
-      entryTokenFDV: null,
-      hasEquity: true,
-      equityPct: 0.075,
-      equityFDV: null,
-      vesting: {
-        label: '12-month cliff (no release); 1/36 monthly thereafter to month 48',
-        startDate: null,
-        cliffMonths: 12,
-        cliffPct: 0,
-        monthlyPct: 1 / 36,
-        endMonths: 48,
-        tgeLabel: 'TGE pending',
-      },
+      notes:
+        '$1M deployed for 2.5% equity + 2.5% token allocation at $40M entry FDV. Strategic relationship adds 7.5% equity and 7.5% token allocation with no cash cost, bringing the combined position to 10% equity / 10% token.',
     },
     {
       id: 'rise',
       company: 'Rise Chain',
       subtitle: 'Surge Labs · L1 infrastructure',
-      position: 'Investment',
+      position: 'Seed',
       status: 'Pre-TGE',
       tokenLive: false,
       cashDeployed: 250_000,
@@ -89,7 +69,7 @@ window.PORTFOLIO = {
       id: 'resolv',
       company: 'Resolv',
       subtitle: 'Synthetic USD / yield-bearing stablecoin',
-      position: 'Investment',
+      position: 'Seed',
       status: 'Live — in lock-up',
       tokenLive: true,
       tokenSymbol: 'RESOLV',
@@ -97,8 +77,8 @@ window.PORTFOLIO = {
       cashDeployed: 200_000,
       tokenPct: 0.002,
       tokenCount: 2_000_000,
-      entryTokenFDV: 50_000_000,
-      entryTokenPositionValue: 100_000, // 0.2% × $50M
+      entryTokenFDV: 100_000_000,
+      entryTokenPositionValue: 200_000, // 0.2% × $100M
       hasEquity: true,
       equityPct: 0.004,
       equityFDV: 50_000_000,
@@ -115,19 +95,19 @@ window.PORTFOLIO = {
       },
     },
     {
-      id: 'ethgas-saft',
+      id: 'ethgas',
       company: 'ETHGas',
       subtitle: 'Ethereum preconfirmation infrastructure',
-      position: 'Investment (SAFT)',
+      position: 'Seed',
       status: 'Live — in lock-up',
       tokenLive: true,
       tokenSymbol: 'GWEI',
       totalSupply: 10_000_000_000,
       cashDeployed: 1_000_000,
-      tokenPct: 0.01,
-      tokenCount: 100_000_000,
+      tokenPct: 0.02, // 1% SAFT + 1% strategic grant
+      tokenCount: 200_000_000, // 100M SAFT + 100M strategic
       entryTokenFDV: 100_000_000,
-      entryTokenPositionValue: 1_000_000,
+      entryTokenPositionValue: 1_000_000, // paid portion: 1% × $100M
       hasEquity: false,
       tgeDate: '2026-01-21',
       vesting: {
@@ -140,38 +120,14 @@ window.PORTFOLIO = {
         tgeLabel: 'TGE: Jan 21, 2026',
         firstUnlockLabel: 'First unlock: Jan 21, 2027',
       },
-    },
-    {
-      id: 'ethgas-strat',
-      company: 'ETHGas',
-      subtitle: 'Ethereum preconfirmation infrastructure',
-      position: 'Strategic Allocation',
-      status: 'Live — in lock-up',
-      tokenLive: true,
-      tokenSymbol: 'GWEI',
-      totalSupply: 10_000_000_000,
-      cashDeployed: 0,
-      tokenPct: 0.01,
-      tokenCount: 100_000_000,
-      entryTokenFDV: null,
-      entryTokenPositionValue: null,
-      hasEquity: false,
-      vesting: {
-        label: '12-month cliff (10%); 3.75% monthly thereafter to Apr 2029',
-        startDate: '2026-04-15',
-        cliffMonths: 12,
-        cliffPct: 0.10,
-        monthlyPct: 0.0375,
-        endMonths: 36,
-        tgeLabel: 'Grant effective: Apr 15, 2026',
-        firstUnlockLabel: 'First unlock: Apr 15, 2027',
-      },
+      notes:
+        '$1M SAFT purchased 1% of supply (100M GWEI) at $100M entry FDV. Strategic relationship adds a further 1% grant (100M GWEI) with no cash cost, bringing the combined position to 2% / 200M GWEI. The strategic tranche begins vesting Apr 15, 2026; the displayed schedule reflects the SAFT timeline.',
     },
     {
       id: 'symbiotic',
       company: 'Symbiotic',
       subtitle: 'Universal restaking protocol · via GPRP Holdings SPV',
-      position: 'Series A (equity + token warrant)',
+      position: 'Series A',
       status: 'Pre-TGE',
       tokenLive: false,
       cashDeployed: 100_267,

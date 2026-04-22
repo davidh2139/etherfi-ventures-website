@@ -127,16 +127,8 @@
   }
 
   // ---------- Rendering ----------
-  function renderHeader(prices) {
+  function renderHeader() {
     document.getElementById('as-of-date').textContent = fmtDate(todayISO);
-    const header = document.getElementById('prices-header');
-    header.innerHTML = Object.entries(prices).map(([sym, p]) => `
-      <div class="flex items-center gap-1.5">
-        <span class="text-slate-500">${sym}</span>
-        <span class="text-slate-200">${fmtPrice(p.usd)}</span>
-        ${p.stale ? '<span class="text-amber-500" title="Price fetch failed; using cached value">·</span>' : ''}
-      </div>
-    `).join('');
   }
 
   function renderSummary(enriched) {
@@ -189,8 +181,63 @@
     return `<span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${color}">${status}</span>`;
   }
 
-  function renderPositionsTable(enriched) {
-    const rows = enriched.map(p => {
+  // Column definitions drive the positions table: header rendering, click-to-sort
+  // handlers, and default sort direction (text ascending, numeric descending).
+  const POSITION_COLUMNS = [
+    { key: 'company',           label: 'Company',       align: 'left',  type: 'text',    accessor: p => p.company || '' },
+    { key: 'position',          label: 'Stage',         align: 'left',  type: 'text',    accessor: p => p.position || '' },
+    { key: 'cashDeployed',      label: 'Cash',          align: 'right', type: 'number',  accessor: p => p.cashDeployed || 0 },
+    { key: 'tokenPct',          label: 'Allocation',    align: 'right', type: 'number',  accessor: p => p.tokenPct || 0 },
+    { key: 'entryTokenFDV',     label: 'Entry FDV',     align: 'right', type: 'number',  accessor: p => p.entryTokenFDV || 0 },
+    { key: 'currentTokenFDV',   label: 'Current FDV',   align: 'right', type: 'number',  accessor: p => p.currentTokenFDV || 0 },
+    { key: 'positionMark',      label: 'Current Value', align: 'right', type: 'number',  accessor: p => p.positionMark || 0 },
+    { key: 'markMultiple',      label: 'Mark',          align: 'right', type: 'number',  accessor: p => p.markMultiple || 0 },
+    { key: 'status',            label: 'Status',        align: 'left',  type: 'text',    accessor: p => p.status || '' },
+  ];
+
+  let sortState = { key: 'company', dir: 'asc' };
+  let cachedEnriched = [];
+
+  function sortPositions(enriched) {
+    const col = POSITION_COLUMNS.find(c => c.key === sortState.key);
+    if (!col) return enriched;
+    const mult = sortState.dir === 'asc' ? 1 : -1;
+    return [...enriched].sort((a, b) => {
+      const av = col.accessor(a);
+      const bv = col.accessor(b);
+      if (col.type === 'text') return mult * String(av).localeCompare(String(bv));
+      return mult * (av - bv);
+    });
+  }
+
+  function renderPositionsTableHead() {
+    const tr = document.getElementById('positions-thead');
+    tr.innerHTML = POSITION_COLUMNS.map(col => {
+      const active = sortState.key === col.key;
+      const arrow = active ? (sortState.dir === 'asc' ? ' ↑' : ' ↓') : '';
+      const alignClass = col.align === 'right' ? 'text-right' : 'text-left';
+      const activeClass = active ? 'text-slate-200' : '';
+      return `<th class="${alignClass} font-medium px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors ${activeClass}" data-sort-key="${col.key}">${col.label}<span class="inline-block w-3 text-sky-400">${arrow}</span></th>`;
+    }).join('');
+    tr.querySelectorAll('th').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sortKey;
+        if (sortState.key === key) {
+          sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortState.key = key;
+          const col = POSITION_COLUMNS.find(c => c.key === key);
+          sortState.dir = col.type === 'number' ? 'desc' : 'asc';
+        }
+        renderPositionsTableHead();
+        renderPositionsTableBody();
+      });
+    });
+  }
+
+  function renderPositionsTableBody() {
+    const sorted = sortPositions(cachedEnriched);
+    const rows = sorted.map(p => {
       const multipleCell = p.markMultiple == null
         ? '<span class="text-slate-500">—</span>'
         : `<span class="${p.markMultiple >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(p.markMultiple)}</span>`;
@@ -213,8 +260,8 @@
     }).join('');
     document.getElementById('positions-table').innerHTML = rows;
 
-    const totalCash = enriched.reduce((a, p) => a + (p.cashDeployed || 0), 0);
-    const totalMark = enriched.reduce((a, p) => a + (p.positionMark || 0), 0);
+    const totalCash = cachedEnriched.reduce((a, p) => a + (p.cashDeployed || 0), 0);
+    const totalMark = cachedEnriched.reduce((a, p) => a + (p.positionMark || 0), 0);
     const totalMultiple = totalCash > 0 ? totalMark / totalCash : null;
     const multCls = totalMultiple != null && totalMultiple >= 1 ? 'text-emerald-400' : 'text-red-400';
     document.getElementById('positions-total').innerHTML = `
@@ -229,6 +276,12 @@
     `;
   }
 
+  function renderPositionsTable(enriched) {
+    cachedEnriched = enriched;
+    renderPositionsTableHead();
+    renderPositionsTableBody();
+  }
+
   // Group by company for detail cards
   function renderCompanies(enriched) {
     const byCompany = new Map();
@@ -238,7 +291,9 @@
     }
 
     const container = document.getElementById('companies');
-    container.innerHTML = [...byCompany.entries()].map(([company, positions]) => {
+    container.innerHTML = [...byCompany.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([company, positions]) => {
       const anyLive = positions.some(p => p.tokenLive);
       const subtitle = positions[0].subtitle;
       const totalCash = positions.reduce((a, p) => a + (p.cashDeployed || 0), 0);
@@ -290,7 +345,7 @@
 
   function renderPositionDetail(p) {
     const metrics = [];
-    metrics.push({ label: 'Position', value: p.position });
+    metrics.push({ label: 'Stage', value: p.position });
     metrics.push({ label: 'Cash Deployed', value: p.cashDeployed > 0 ? fmtUSD(p.cashDeployed) : '—' });
     metrics.push({ label: 'Token Allocation', value: p.tokenPct != null ? fmtPct(p.tokenPct, 3) : '—' });
     if (p.tokenCount != null) metrics.push({ label: 'Tokens', value: fmtTokens(p.tokenCount) + (p.tokenSymbol ? ' ' + p.tokenSymbol : '') });
@@ -482,7 +537,7 @@
   async function boot() {
     const prices = await fetchPrices();
     const enriched = P.positions.map(p => enrichPosition(p, prices));
-    renderHeader(prices);
+    renderHeader();
     renderSummary(enriched);
     renderPositionsTable(enriched);
     renderCompanies(enriched);
