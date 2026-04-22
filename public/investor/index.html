@@ -45,9 +45,8 @@
     <section id="summary" class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-10"></section>
 
     <section class="mb-10">
-      <div class="flex items-baseline justify-between gap-3 mb-4">
+      <div class="mb-4">
         <h2 class="text-xl font-semibold tracking-tight">Positions</h2>
-        <div class="text-xs text-slate-500"><span id="position-count"></span> positions across <span id="company-count"></span> companies</div>
       </div>
       <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50">
         <table class="w-full text-sm">
@@ -73,12 +72,10 @@
       <details class="rounded-xl border border-slate-800 bg-slate-900/40 open:bg-slate-900/60">
         <summary class="cursor-pointer px-5 py-4 text-sm font-medium text-slate-200 hover:text-white">Valuation Methodology</summary>
         <div class="px-5 pb-5 text-xs text-slate-400 leading-relaxed space-y-2">
-          <p><strong class="text-slate-300">Strategic allocations</strong> (Hyperbeat, ETHGas): cash deployed purchases a paid tranche; a strategic grant adds additional token + equity allocation at no cost. The two tranches are reported as a single "Investment" line; cash reflects only the paid portion while token and equity percentages aggregate paid + granted. Current Mark = cash (equity at cost) + combined token allocation × current FDV/price, so MOIC captures the strategic bonus plus ongoing token performance.</p>
-          <p><strong class="text-slate-300">Non-strategic SAFE + Token Warrant / SAFT</strong> (Rise, Resolv): cash was the combined basis for equity + token warrant at the round, so Current Mark is not cash + tokens (that double-counts the warrant). Instead, Current Mark = cash × (current FDV ÷ entry FDV). If the token falls below the round price, MOIC drops below 1.00x; if the next round marks the company up, MOIC scales with the round-to-round multiple.</p>
-          <p><strong class="text-slate-300">Pure equity</strong> (Symbiotic): single pro-rata claim on the round FDV. Current Mark = cash at cost when entry FDV equals current FDV; MOIC stays at 1.00x until a subsequent valuation signal moves.</p>
-          <p><strong class="text-slate-300">Entry FDV</strong>: for strategic positions, blended FDV = cash ÷ combined allocation (reflects the effective entry price across paid + granted tranches). For non-strategic positions, Entry FDV equals the round FDV. For pure-equity positions, Entry FDV equals the round equity FDV.</p>
-          <p><strong class="text-slate-300">Current FDV</strong>: live token FDV where a token trades publicly (price × total supply), otherwise the most recent round valuation. No markup is taken between rounds.</p>
-          <p><strong class="text-slate-300">Discounted Mark / Discounted MOIC</strong>: applies a tiered discount for lack of marketability (DLOM) tranche-by-tranche to each vesting unlock, calibrated to Longstaff-style protective put option pricing model outputs at crypto-typical volatility (~80–140% annualized) per the Fund's ASC 820 / AICPA Valuation Guide (2019) policy.</p>
+          <p><strong class="text-slate-300">Equity (SAFEs, priced rounds, convertible notes)</strong>: fair value equals transaction price (cost basis) unless a triggering event has occurred — a new priced round in the portfolio company, a material adverse event, or a third-party secondary at a materially different price. At a triggering event, the position is marked to the new observable price or an impairment is documented. No DLOM is applied to equity.</p>
+          <p><strong class="text-slate-300">Pre-TGE tokens (SAFTs, token warrants, pre-launch)</strong>: fair value equals transaction price (cost basis) until token generation event or a subsequent priced round. Same triggering-event logic as equity.</p>
+          <p><strong class="text-slate-300">Liquid / fully vested tokens</strong>: fair value equals the spot price of the token at the measurement date, sourced from CoinGecko sampled at page load on the reporting date.</p>
+          <p><strong class="text-slate-300">Locked or vesting tokens (with liquid underlying market)</strong>: fair value equals spot × (1 − DLOM), applied tranche-by-tranche based on each tranche's remaining restriction period. Discount for lack of marketability is calibrated to Longstaff-style protective put option pricing model outputs at crypto-typical volatility (~80–140% annualized):</p>
           <div class="pl-4 text-xs text-slate-400 space-y-0.5">
             <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-0.5 max-w-sm">
               <span class="text-slate-500">0–1 year remaining</span><span class="font-mono">30%</span>
@@ -87,7 +84,10 @@
               <span class="text-slate-500">3+ years remaining</span><span class="font-mono">65%</span>
             </div>
           </div>
-          <p class="text-slate-400">Each tranche receives the tier matching its specific remaining lockup; the portfolio's effective DLOM is the weighted average of those tier DLOMs by tranche size. Vested/liquid tokens receive no DLOM. For strategic positions the DLOM applies only to the locked token portion (equity held at cost is not further discounted); for non-strategic positions the whole mark is discounted since it derives entirely from locked-token FDV. Pure-equity positions use a per-position flat haircut documented as an exception, since policy does not apply DLOM to equity.</p>
+          <p><strong class="text-slate-300">Strategic allocations</strong>: where a strategic token grant accompanies a cash investment (Hyperbeat, ETHGas), the tranches are reported as a single "Investment" line. Cash deployed reflects only the paid portion; token and equity percentages aggregate paid + granted. MOIC captures total cash-on-cash return inclusive of the strategic grant.</p>
+          <p><strong class="text-slate-300">Entry FDV</strong>: for strategic positions, this is a blended FDV — cash deployed ÷ combined token allocation — reflecting the effective entry price across paid + granted tranches. For non-strategic positions, Entry FDV equals the round FDV. For pure-equity positions, Entry FDV equals the round equity FDV.</p>
+          <p><strong class="text-slate-300">Current FDV</strong>: live token FDV where a token trades publicly (price × total supply), otherwise the most recent round valuation.</p>
+          <p><strong class="text-slate-300">Exceptions</strong>: for any position where trading volume is thin relative to the Fund's holding, or where protocol-specific, regulatory, or concentration risks are not captured by the tiered table, additional judgment is applied and documented in a per-position fair value memo.</p>
           <p><strong class="text-slate-300">Vesting</strong>: computed from each position's contractual schedule against today's date. Charts show cumulative percent unlocked from TGE/effective date through full unlock.</p>
           <p><strong class="text-slate-300">Prices</strong>: fetched live from CoinGecko on page load. If the API is unavailable, last-known prices are used.</p>
         </div>

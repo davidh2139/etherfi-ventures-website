@@ -279,10 +279,6 @@
     const markMultiple = totalCash > 0 ? currentMark / totalCash : null;
     const discountedMarkMultiple = totalCash > 0 ? discountedMark / totalCash : null;
 
-    const companies = new Set(enriched.map(p => p.company));
-    document.getElementById('position-count').textContent = enriched.length;
-    document.getElementById('company-count').textContent = companies.size;
-
     const cards = [
       {
         label: 'Total Deployed',
@@ -368,7 +364,7 @@
       const alignClass = col.align === 'right' ? 'text-right' : 'text-left';
       const activeClass = active ? 'text-slate-200' : '';
       const arrowSpan = arrow ? ` <span class="text-sky-400">${arrow}</span>` : '';
-      return `<th class="${alignClass} font-medium px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors ${activeClass}" data-sort-key="${col.key}">${col.label}${arrowSpan}</th>`;
+      return `<th class="${alignClass} font-medium px-4 py-3 whitespace-nowrap cursor-pointer select-none hover:text-slate-200 transition-colors ${activeClass}" data-sort-key="${col.key}">${col.label}${arrowSpan}</th>`;
     }).join('');
     tr.querySelectorAll('th').forEach(th => {
       th.addEventListener('click', () => {
@@ -401,16 +397,16 @@
             <div class="font-medium text-slate-100">${p.company}</div>
             <div class="text-xs text-slate-500 mt-0.5">${p.subtitle}</div>
           </td>
-          <td class="px-4 py-3 text-slate-200">${p.position}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-200">${p.cashDeployed > 0 ? fmtUSD(p.cashDeployed, { compact: true }) : dash}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-200">${p.tokenPct != null ? fmtPct(p.tokenPct, 3) : dash}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-300">${entryFDV ? fmtUSD(entryFDV, { compact: true }) : dash}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-300">${p.currentTokenFDV ? fmtUSD(p.currentTokenFDV, { compact: true }) : dash}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-100">${p.positionMark != null ? fmtUSD(p.positionMark, { compact: true }) : dash}</td>
-          <td class="px-4 py-3 text-right font-mono">${multipleCell(p.markMultiple)}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-100">${p.discountedPositionMark != null ? fmtUSD(p.discountedPositionMark, { compact: true }) : dash}</td>
-          <td class="px-4 py-3 text-right font-mono">${multipleCell(p.discountedMarkMultiple)}</td>
-          <td class="px-4 py-3">${statusBadge(p.status)}</td>
+          <td class="px-4 py-3 text-slate-200 whitespace-nowrap">${p.position}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-200 whitespace-nowrap">${p.cashDeployed > 0 ? fmtUSD(p.cashDeployed, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-200 whitespace-nowrap">${p.tokenPct != null ? fmtPct(p.tokenPct, 3) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-300 whitespace-nowrap">${entryFDV ? fmtUSD(entryFDV, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-300 whitespace-nowrap">${p.currentTokenFDV ? fmtUSD(p.currentTokenFDV, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-100 whitespace-nowrap">${p.positionMark != null ? fmtUSD(p.positionMark, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${multipleCell(p.markMultiple)}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-100 whitespace-nowrap">${p.discountedPositionMark != null ? fmtUSD(p.discountedPositionMark, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${multipleCell(p.discountedMarkMultiple)}</td>
+          <td class="px-4 py-3 whitespace-nowrap">${statusBadge(p.status)}</td>
         </tr>
       `;
     }).join('');

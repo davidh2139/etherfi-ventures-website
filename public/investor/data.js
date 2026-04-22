@@ -41,7 +41,7 @@ window.PORTFOLIO = {
         tgeLabel: 'TGE pending',
       },
       notes:
-        '$1M deployed for 2.5% equity + 2.5% token allocation at $40M round FDV. Strategic relationship adds 7.5% equity + 7.5% token allocation with no cash cost; combined position is 10% equity / 10% token. Blended entry FDV of $10M reflects cash deployed ÷ combined allocation.',
+        '$1M deployed for 2.5% equity + 2.5% token allocation at $40M round FDV. Strategic relationship adds an additional 7.5% equity and 7.5% token allocation with no cash cost; combined position is 10% equity / 10% token.',
     },
     {
       id: 'rise',
@@ -125,7 +125,7 @@ window.PORTFOLIO = {
         firstUnlockLabel: 'First unlock: Jan 21, 2027',
       },
       notes:
-        '$1M SAFT purchased 1% of supply (100M GWEI) at $100M round FDV. Strategic relationship adds a further 1% grant (100M GWEI) with no cash cost; combined position is 2% / 200M GWEI. Blended entry FDV of $50M reflects cash deployed ÷ combined allocation. The strategic tranche begins vesting Apr 15, 2026; the displayed schedule reflects the SAFT timeline.',
+        '$1M SAFT purchased 1% of supply (100M GWEI) at $100M round FDV. Strategic relationship adds a further 1% grant (100M GWEI) with no cash cost; combined position is 2% / 200M GWEI. The strategic tranche begins vesting Apr 15, 2026; the displayed schedule reflects the SAFT timeline.',
     },
     {
       id: 'symbiotic',
@@ -143,13 +143,13 @@ window.PORTFOLIO = {
       equityPct: 100_267 / 350_000_000, // cash / Series A FDV
       equityFDV: 350_000_000,
       // Pure-equity treatment: cash is a single pro-rata claim (no separate
-      // token mark-up on top). With entry FDV == current FDV, undiscounted
-      // MOIC stays 1.00x. Illiquidity handled via a flat 70% haircut.
+      // token mark-up on top). With entry FDV == current FDV, MOIC = 1.00x.
+      // Per the Fund's ASC 820 policy, equity does not receive a DLOM, so
+      // Discounted Mark equals Current Mark here.
       pureEquity: true,
-      flatDiscount: 0.70,
       vesting: null,
       notes:
-        'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation; allocation derived from cash deployed ÷ round FDV. Position marked as pure equity (single pro-rata claim), with a flat 70% illiquidity discount in lieu of the standard lockup-schedule discount.',
+        'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation.',
     },
   ],
 };

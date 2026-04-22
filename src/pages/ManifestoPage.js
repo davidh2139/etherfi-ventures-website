@@ -1,236 +1,275 @@
 import React from "react";
-import { BRAND } from "../config/theme";
 
 const CYAN = "#29BCFA";
-
-const bodyStyle = {
-  fontSize: 18,
-  lineHeight: 1.65,
-  color: "rgba(255,255,255,0.85)",
-  margin: "0 0 20px",
-};
-
-const subheadStyle = {
-  fontSize: 24,
-  fontWeight: 600,
-  letterSpacing: -0.5,
-  color: "#ffffff",
-  margin: "44px 0 18px",
-};
-
-const emphasisStyle = {
-  fontSize: 28,
-  fontWeight: 600,
-  color: CYAN,
-  letterSpacing: -0.5,
-  margin: "32px 0 40px",
-};
-
-const strongStyle = {
-  color: "#ffffff",
-  fontWeight: 600,
-};
+const MONO = "'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace";
 
 const STATS = [
-  {
-    v: "$5B+",
-    label: "TVL",
-    desc: "A balance sheet that matters in every integration and partnership conversation.",
-  },
-  {
-    v: "$500M+",
-    label: "Deployable capital",
-    desc: "Anchor deposits, launch LPs, first institutional counterparties for your protocol.",
-  },
-  {
-    v: "300,000+",
-    label: "Users",
-    desc: "A distribution channel most crypto startups spend years and tens of millions trying to build.",
-  },
-  {
-    v: "$1B+",
-    label: "Annualized card volume",
-    desc: "A working consumer crypto business with real surface area to plug product into.",
-  },
+  { v: "$5B+",     label: "TVL",              desc: "Balance sheet that matters in every integration conversation." },
+  { v: "$500M+",   label: "DEPLOYABLE",       desc: "Anchor deposits, launch LPs, first institutional counterparties." },
+  { v: "300,000+", label: "USERS",            desc: "A distribution channel startups spend years trying to build." },
+  { v: "$1B+",     label: "CARD VOL / YR",    desc: "A working consumer crypto business with real surface area." },
 ];
+
+const BODY = {
+  fontSize: 18,
+  lineHeight: 1.6,
+  color: "rgba(255,255,255,0.82)",
+  margin: "0 0 22px",
+};
+
+const BODY_LARGE = {
+  ...BODY,
+  fontSize: 21,
+  lineHeight: 1.55,
+  color: "rgba(255,255,255,0.92)",
+  margin: "0 0 26px",
+};
+
+const EMPHASIS = {
+  color: "#ffffff",
+  fontWeight: 600,
+  borderBottom: `1px dashed ${CYAN}aa`,
+  paddingBottom: 1,
+};
+
+function SectionLabel({ n, children }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "72px 0 22px" }}>
+      <span style={{
+        fontFamily: MONO,
+        fontSize: 11,
+        letterSpacing: "0.22em",
+        color: CYAN,
+        fontWeight: 500,
+        textTransform: "uppercase",
+        whiteSpace: "nowrap",
+      }}>
+        §{n.toString().padStart(2, "0")} · {children}
+      </span>
+      <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+    </div>
+  );
+}
 
 export default function ManifestoPage() {
   return (
-    <section style={{ minHeight: "100vh", padding: "120px 0 80px" }}>
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 40px", color: "#ffffff" }}>
+    <section style={{ minHeight: "100vh", padding: "100px 0 80px" }}>
+      <div style={{ maxWidth: 880, margin: "0 auto", padding: "0 40px", color: "#ffffff" }}>
 
-        <div
-          style={{
-            fontSize: 12,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: CYAN,
-            fontWeight: 600,
-            marginBottom: 14,
-          }}
-        >
-          Manifesto
+        {/* Top meta bar */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          fontFamily: MONO,
+          fontSize: 11,
+          letterSpacing: "0.24em",
+          color: "rgba(255,255,255,0.45)",
+          marginBottom: 64,
+          textTransform: "uppercase",
+        }}>
+          <span>Manifesto</span>
+          <span style={{ width: 28, height: 1, background: "rgba(255,255,255,0.18)" }} />
+          <span>No. 001</span>
+          <span style={{ width: 28, height: 1, background: "rgba(255,255,255,0.18)" }} />
+          <span>Ether.fi Ventures</span>
         </div>
 
-        <h1
-          style={{
-            fontSize: "clamp(44px, 6vw, 66px)",
-            fontWeight: 700,
-            letterSpacing: -1.5,
-            lineHeight: 1.1,
-            margin: "0 0 36px",
-          }}
-        >
-          Crypto will eat the world.
+        {/* Hero */}
+        <h1 style={{
+          fontFamily: MONO,
+          fontSize: "clamp(44px, 7.5vw, 84px)",
+          fontWeight: 700,
+          letterSpacing: -2,
+          lineHeight: 1.02,
+          margin: "0 0 64px",
+        }}>
+          Crypto will eat
+          <br />
+          the world<span style={{ color: CYAN }}>.</span>
         </h1>
 
-        <p style={bodyStyle}>
-          Stablecoins have become one of the fastest-growing payment rails in history. Tokenized treasuries went from zero to tens of billions in twenty-four months. Onchain perpetuals are compounding against their centralized competitors every quarter. Regulatory clarity in the US and Europe has closed the overhang that kept a decade of institutional capital on the sidelines.
+        {/* Lead paragraph with drop cap */}
+        <p style={{ ...BODY_LARGE, margin: "0 0 26px" }}>
+          <span style={{
+            fontFamily: MONO,
+            fontSize: 62,
+            float: "left",
+            lineHeight: 0.88,
+            marginRight: 10,
+            marginTop: 6,
+            color: CYAN,
+            fontWeight: 700,
+          }}>
+            S
+          </span>
+          tablecoins have become one of the fastest-growing payment rails in history. Tokenized treasuries went from zero to tens of billions in twenty-four months. Onchain perpetuals are compounding against their centralized competitors every quarter. Regulatory clarity in the US and Europe has closed the overhang that kept a decade of institutional capital on the sidelines.
         </p>
-        <p style={bodyStyle}>
+        <p style={BODY_LARGE}>
           The next decade of financial services, consumer fintech, and market structure will be rebuilt onchain — and most of the winners haven't been founded yet.
         </p>
 
-        <div style={emphasisStyle}>We exist to back them.</div>
+        {/* Pull quote */}
+        <blockquote style={{
+          fontFamily: MONO,
+          fontSize: "clamp(26px, 4vw, 40px)",
+          fontWeight: 500,
+          color: CYAN,
+          letterSpacing: -1,
+          lineHeight: 1.15,
+          margin: "52px 0 0",
+          padding: "4px 0 4px 22px",
+          borderLeft: `3px solid ${CYAN}`,
+        }}>
+          We exist to back them.
+        </blockquote>
 
-        <h2 style={subheadStyle}>Here's what we believe</h2>
-        <p style={bodyStyle}>
-          In a market where protocols fork in a weekend and infrastructure is commoditizing toward zero, <span style={strongStyle}>distribution is the moat</span>. The teams that win are the teams that figure out how to acquire users and hold them. Every question we ask in diligence circles back to the same one: how do you get to a million users, and what keeps them there?
+        <SectionLabel n={1}>What we believe</SectionLabel>
+        <p style={BODY}>
+          In a market where protocols fork in a weekend and infrastructure is commoditizing toward zero, <span style={EMPHASIS}>distribution is the moat</span>. The teams that win are the teams that figure out how to acquire users and hold them.
+        </p>
+        <p style={{ ...BODY, margin: "0 0 12px" }}>
+          Every question we ask in diligence circles back to the same one:
+        </p>
+        <p style={{
+          fontFamily: MONO,
+          fontSize: "clamp(18px, 2.4vw, 22px)",
+          fontStyle: "italic",
+          color: "rgba(255,255,255,0.95)",
+          lineHeight: 1.4,
+          margin: "0 0 24px",
+          paddingLeft: 18,
+          borderLeft: `2px solid ${CYAN}66`,
+        }}>
+          How do you get to a million users, and what keeps them there?
         </p>
 
-        <h2 style={subheadStyle}>That's where we come in.</h2>
-        <p style={bodyStyle}>
-          Most crypto funds give you money and a tweet. We have something they don't: a first-class partnership with <span style={strongStyle}>ether.fi</span> — the largest liquid restaking protocol in the world and one of the largest DeFi platforms, period. That partnership is operational leverage we put to work for the founders we back from day one:
+        <SectionLabel n={2}>Where we come in</SectionLabel>
+        <p style={BODY}>
+          Most crypto funds give you money and a tweet. We have something they don't: a first-class partnership with <span style={EMPHASIS}>ether.fi</span> — the largest liquid restaking protocol in the world, and one of the largest DeFi platforms, period.
+        </p>
+        <p style={BODY}>
+          That partnership is operational leverage we put to work for the founders we back, from day one:
         </p>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 16,
-            margin: "32px 0 48px",
-          }}
-        >
+        {/* Stats row — horizontal, no boxes, hairline dividers */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+          borderTop: `1px solid ${CYAN}40`,
+          borderBottom: `1px solid ${CYAN}40`,
+          margin: "40px 0 48px",
+        }}>
           {STATS.map((s, i) => (
             <div
               key={i}
               style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 12,
-                padding: "22px 20px",
+                padding: "26px 22px 22px",
+                borderRight: i < STATS.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
               }}
             >
-              <div
-                style={{
-                  fontSize: 30,
-                  fontWeight: 700,
-                  color: CYAN,
-                  letterSpacing: -0.8,
-                  lineHeight: 1.1,
-                }}
-              >
+              <div style={{
+                fontFamily: MONO,
+                fontSize: 34,
+                fontWeight: 700,
+                color: CYAN,
+                letterSpacing: -1.2,
+                lineHeight: 1,
+              }}>
                 {s.v}
               </div>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: "#ffffff",
-                  marginTop: 10,
-                  letterSpacing: -0.2,
-                }}
-              >
+              <div style={{
+                fontFamily: MONO,
+                fontSize: 10,
+                letterSpacing: "0.22em",
+                color: "rgba(255,255,255,0.95)",
+                marginTop: 14,
+                fontWeight: 500,
+              }}>
                 {s.label}
               </div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.55)",
-                  lineHeight: 1.5,
-                  marginTop: 6,
-                }}
-              >
+              <div style={{
+                fontSize: 12,
+                color: "rgba(255,255,255,0.55)",
+                marginTop: 8,
+                lineHeight: 1.5,
+              }}>
                 {s.desc}
               </div>
             </div>
           ))}
         </div>
 
-        <h2 style={subheadStyle}>We are not career VCs. We are operators.</h2>
-        <p style={bodyStyle}>
-          ether.fi did <span style={strongStyle}>$50M+ in revenue in 2025</span>. Before ether.fi, our founding team built <span style={strongStyle}>Top Hat</span>, one of the most widely-used student engagement platforms in higher education, reaching over 3 million students. Different industries. Same playbook: distribution.
+        <SectionLabel n={3}>Not career VCs. Operators.</SectionLabel>
+        <p style={BODY}>
+          ether.fi did <span style={EMPHASIS}>$50M+ in revenue in 2025</span>. Before ether.fi, our founding team built <span style={EMPHASIS}>Top Hat</span>, one of the most widely-used student engagement platforms in higher education, reaching over 3 million students.
         </p>
-        <p style={bodyStyle}>
+        <p style={BODY}>
+          Different industries. Same playbook: distribution.
+        </p>
+        <p style={BODY}>
           When we push back on your GTM, it's because we've already run the experiment. When we make an intro, it's to someone we've worked with.
         </p>
 
-        <h2 style={subheadStyle}>How we invest</h2>
-        <p style={bodyStyle}>
+        <SectionLabel n={4}>How we invest</SectionLabel>
+        <p style={BODY}>
           We lead, co-lead, and follow pre-seed through Series A across the Ethereum and DeFi ecosystem. We invest on fundamentals, not strategic fit. We write first checks, take real positions, and don't spray.
         </p>
 
-        <h2 style={subheadStyle}>What we promise you</h2>
-        <p style={bodyStyle}>
-          A decision in days, not months. Real access to ether.fi's users, balance sheet, and integrations from day one — not a promise of intros later. Working sessions on the stuff that actually moves a company in its first eighteen months: GTM, token design, compliance, hiring, BD.
+        <SectionLabel n={5}>What we promise</SectionLabel>
+        <p style={BODY}>
+          A decision in days, not months. Real access to ether.fi's users, balance sheet, and integrations from day one — not a promise of intros later. Working sessions on what actually moves a company in its first eighteen months: GTM, token design, compliance, hiring, BD.
         </p>
 
-        <div
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.12)",
-            paddingTop: 40,
-            marginTop: 56,
-          }}
-        >
-          <p style={{ ...bodyStyle, fontSize: 19 }}>
-            ether.fi is building the financial system for the onchain economy. <span style={strongStyle}>ether.fi Ventures backs the founders building alongside it.</span>
+        {/* Closing */}
+        <div style={{ margin: "80px 0 0" }}>
+          <p style={{ ...BODY_LARGE, margin: "0 0 56px" }}>
+            ether.fi is building the financial system for the onchain economy. <span style={EMPHASIS}>ether.fi Ventures backs the founders building alongside it.</span>
           </p>
 
-          <div
-            style={{
-              background: "linear-gradient(135deg, rgba(41,188,250,0.08), rgba(0,80,174,0.14))",
-              border: "1px solid " + CYAN + "30",
-              borderRadius: 16,
-              padding: "36px 28px",
-              marginTop: 32,
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "clamp(22px, 3vw, 26px)",
-                fontWeight: 600,
-                margin: "0 0 10px",
-                color: "#ffffff",
-                letterSpacing: -0.3,
-              }}
-            >
-              If that's you — send us your deck.
+          {/* CTA */}
+          <div style={{
+            borderTop: "1px solid rgba(255,255,255,0.15)",
+            paddingTop: 40,
+          }}>
+            <div style={{
+              fontFamily: MONO,
+              fontSize: 11,
+              letterSpacing: "0.24em",
+              color: CYAN,
+              marginBottom: 18,
+              textTransform: "uppercase",
+              fontWeight: 500,
+            }}>
+              → Send us your deck
             </div>
-            <div
-              style={{
-                fontSize: 15,
-                color: "rgba(255,255,255,0.75)",
-                margin: "0 0 22px",
-              }}
-            >
+            <div style={{
+              fontFamily: MONO,
+              fontSize: "clamp(30px, 5vw, 48px)",
+              fontWeight: 600,
+              letterSpacing: -1.2,
+              lineHeight: 1.1,
+              marginBottom: 28,
+            }}>
               We'll read it tonight.
             </div>
             <a
               href="mailto:ventures@ether.fi"
               style={{
-                display: "inline-block",
-                background: BRAND.cyan,
-                color: "#ffffff",
-                padding: "13px 30px",
-                borderRadius: 10,
-                fontWeight: 600,
-                fontSize: 15,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                fontFamily: MONO,
+                fontSize: 16,
+                fontWeight: 500,
+                color: CYAN,
                 textDecoration: "none",
-                letterSpacing: 0.2,
+                borderBottom: `1px solid ${CYAN}70`,
+                paddingBottom: 4,
               }}
             >
               ventures@ether.fi
+              <span aria-hidden="true" style={{ fontSize: 18 }}>→</span>
             </a>
           </div>
         </div>
