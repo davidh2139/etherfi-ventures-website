@@ -188,7 +188,7 @@
     { key: 'position',          label: 'Stage',         align: 'left',  type: 'text',    accessor: p => p.position || '' },
     { key: 'cashDeployed',      label: 'Cash',          align: 'right', type: 'number',  accessor: p => p.cashDeployed || 0 },
     { key: 'tokenPct',          label: 'Allocation',    align: 'right', type: 'number',  accessor: p => p.tokenPct || 0 },
-    { key: 'entryTokenFDV',     label: 'Entry FDV',     align: 'right', type: 'number',  accessor: p => p.entryTokenFDV || 0 },
+    { key: 'entryTokenFDV',     label: 'Entry FDV',     align: 'right', type: 'number',  accessor: p => p.entryTokenFDV ?? p.equityFDV ?? 0 },
     { key: 'currentTokenFDV',   label: 'Current FDV',   align: 'right', type: 'number',  accessor: p => p.currentTokenFDV || 0 },
     { key: 'positionMark',      label: 'Current Value', align: 'right', type: 'number',  accessor: p => p.positionMark || 0 },
     { key: 'markMultiple',      label: 'Mark',          align: 'right', type: 'number',  accessor: p => p.markMultiple || 0 },
@@ -242,6 +242,7 @@
       const multipleCell = p.markMultiple == null
         ? '<span class="text-slate-500">—</span>'
         : `<span class="${p.markMultiple >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(p.markMultiple)}</span>`;
+      const entryFDV = p.entryTokenFDV ?? p.equityFDV;
       return `
         <tr class="hover:bg-slate-800/30">
           <td class="px-4 py-3">
@@ -251,7 +252,7 @@
           <td class="px-4 py-3 text-slate-300">${p.position}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-200">${p.cashDeployed > 0 ? fmtUSD(p.cashDeployed, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-200">${fmtPct(p.tokenPct, 3)}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-300">${p.entryTokenFDV ? fmtUSD(p.entryTokenFDV, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-300">${entryFDV ? fmtUSD(entryFDV, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-300">${p.currentTokenFDV ? fmtUSD(p.currentTokenFDV, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-100">${p.positionMark != null ? fmtUSD(p.positionMark, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
           <td class="px-4 py-3 text-right font-mono">${multipleCell}</td>
@@ -350,7 +351,8 @@
     metrics.push({ label: 'Cash Deployed', value: p.cashDeployed > 0 ? fmtUSD(p.cashDeployed) : '—' });
     metrics.push({ label: 'Token Allocation', value: p.tokenPct != null ? fmtPct(p.tokenPct, 3) : '—' });
     if (p.tokenCount != null) metrics.push({ label: 'Tokens', value: fmtTokens(p.tokenCount) + (p.tokenSymbol ? ' ' + p.tokenSymbol : '') });
-    if (p.entryTokenFDV != null) metrics.push({ label: 'Entry FDV', value: fmtUSD(p.entryTokenFDV, { compact: true }) });
+    const entryFDV = p.entryTokenFDV ?? p.equityFDV;
+    if (entryFDV != null) metrics.push({ label: 'Entry FDV', value: fmtUSD(entryFDV, { compact: true }) });
     if (p.currentPrice != null) metrics.push({ label: 'Current Price', value: fmtPrice(p.currentPrice) + ' / ' + p.tokenSymbol });
     if (p.currentTokenFDV != null) metrics.push({ label: 'Current FDV', value: fmtUSD(p.currentTokenFDV, { compact: true }) });
     if (p.currentTokenValue != null) metrics.push({ label: 'Token Value', value: fmtUSD(p.currentTokenValue, { compact: true }) });
