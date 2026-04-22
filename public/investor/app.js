@@ -7,6 +7,7 @@
   const fmtUSD = (v, opts = {}) => {
     if (v == null || Number.isNaN(v)) return '—';
     const abs = Math.abs(v);
+    if (opts.compact && abs >= 1_000_000_000) return '$' + (v / 1_000_000_000).toFixed(2) + 'B';
     if (opts.compact && abs >= 1_000_000) return '$' + (v / 1_000_000).toFixed(abs >= 10_000_000 ? 1 : 2) + 'M';
     if (opts.compact && abs >= 1_000) return '$' + (v / 1_000).toFixed(0) + 'K';
     return v.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
