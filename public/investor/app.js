@@ -82,6 +82,19 @@
     return prices;
   }
 
+  // ---------- Illiquidity discount ----------
+  // Locked tokens are discounted at 30% per year remaining until full unlock
+  // (compounded). Vested/liquid tokens and equity held at cost are not discounted.
+  const DISCOUNT_RATE_PER_YEAR = 0.30;
+
+  function yearsUntilFullUnlock(vesting, todayISO) {
+    if (!vesting) return 0;
+    if (!vesting.startDate) return vesting.endMonths / 12; // pre-TGE: assume TGE today
+    const elapsed = monthsBetween(vesting.startDate, todayISO);
+    const remaining = Math.max(0, vesting.endMonths - elapsed);
+    return remaining / 12;
+  }
+
   // ---------- Position computations ----------
   function enrichPosition(pos, prices) {
     const out = { ...pos };
@@ -128,6 +141,35 @@
     if (pos.cashDeployed > 0 && out.positionMark != null) {
       out.markMultiple = out.positionMark / pos.cashDeployed;
     }
+
+    // Illiquidity-discounted mark: discount the token portion by remaining
+    // lockup duration; equity (held at cost) is not further discounted.
+    const yearsLocked = yearsUntilFullUnlock(pos.vesting, todayISO);
+    const discountFactor = Math.pow(1 - DISCOUNT_RATE_PER_YEAR, yearsLocked);
+    out.yearsUntilFullUnlock = yearsLocked;
+    out.discountFactor = discountFactor;
+
+    let discountedTokenValue = null;
+    if (out.currentTokenValue != null) {
+      const vestedFrac = out.vestedFraction || 0;
+      discountedTokenValue = out.currentTokenValue * (vestedFrac + (1 - vestedFrac) * discountFactor);
+    }
+    out.discountedTokenValue = discountedTokenValue;
+
+    if (pos.cashDeployed === 0) {
+      out.discountedPositionMark = discountedTokenValue || 0;
+    } else if (!pos.hasEquity) {
+      out.discountedPositionMark = discountedTokenValue != null ? discountedTokenValue : pos.cashDeployed;
+    } else {
+      out.discountedPositionMark = discountedTokenValue != null
+        ? pos.cashDeployed + discountedTokenValue
+        : pos.cashDeployed;
+    }
+
+    if (pos.cashDeployed > 0 && out.discountedPositionMark != null) {
+      out.discountedMarkMultiple = out.discountedPositionMark / pos.cashDeployed;
+    }
+
     return out;
   }
 
@@ -139,8 +181,9 @@
   function renderSummary(enriched) {
     const totalCash = enriched.reduce((a, p) => a + (p.cashDeployed || 0), 0);
     const currentMark = enriched.reduce((a, p) => a + (p.positionMark || 0), 0);
-    const liveTokenValue = enriched.reduce((a, p) => a + (p.currentTokenValue || 0), 0);
+    const discountedMark = enriched.reduce((a, p) => a + (p.discountedPositionMark || 0), 0);
     const markMultiple = totalCash > 0 ? currentMark / totalCash : null;
+    const discountedMarkMultiple = totalCash > 0 ? discountedMark / totalCash : null;
 
     const companies = new Set(enriched.map(p => p.company));
     document.getElementById('position-count').textContent = enriched.length;
@@ -155,7 +198,7 @@
       {
         label: 'Current Mark',
         value: fmtUSD(currentMark, { compact: true }),
-        sub: 'Live tokens at market; pre-TGE at last-known FDV or cost',
+        sub: 'Live tokens at market; pre-TGE at last round FDV',
       },
       {
         label: 'MOIC',
@@ -164,9 +207,15 @@
         positive: markMultiple != null && markMultiple >= 1,
       },
       {
-        label: 'Live Token Value',
-        value: fmtUSD(liveTokenValue, { compact: true }),
-        sub: 'Current market value of live tokens',
+        label: 'Discounted Mark',
+        value: fmtUSD(discountedMark, { compact: true }),
+        sub: '30%/yr illiquidity discount on locked tokens',
+      },
+      {
+        label: 'Discounted MOIC',
+        value: fmtMultiple(discountedMarkMultiple),
+        sub: 'Discounted mark ÷ capital deployed',
+        positive: discountedMarkMultiple != null && discountedMarkMultiple >= 1,
       },
     ];
 

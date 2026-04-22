@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import NavBar from "./components/NavBar";
 import HomePage from "./pages/HomePage";
+import ManifestoPage from "./pages/ManifestoPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import TeamPage from "./pages/TeamPage";
 import NewsPage from "./pages/NewsPage";
@@ -46,6 +47,7 @@ export default function App() {
 
         {/* ── PAGE CONTENT ── */}
         {page === "home" && <HomePage />}
+        {page === "manifesto" && <ManifestoPage />}
         {page === "portfolio" && <PortfolioPage />}
         {page === "team" && <TeamPage />}
         {page === "news" && <NewsPage />}

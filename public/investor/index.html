@@ -42,7 +42,7 @@
       </div>
     </header>
 
-    <section id="summary" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10"></section>
+    <section id="summary" class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-10"></section>
 
     <section class="mb-12">
       <div class="flex items-end justify-between mb-4">
@@ -78,6 +78,7 @@
           <p><strong class="text-slate-300">Strategic allocations</strong>: where a strategic token grant accompanies a cash investment (Hyperbeat, ETHGas), the two tranches are reported as a single "Investment" line. Cash deployed reflects only the paid portion; token allocation and equity percentage aggregate paid + granted, so multiples represent total cash-on-cash return inclusive of the strategic grant.</p>
           <p><strong class="text-slate-300">Entry FDV</strong>: displayed as a blended FDV — cash deployed ÷ combined token allocation — reflecting the effective entry price across paid + granted tranches. Where there is no strategic grant, this equals the round FDV.</p>
           <p><strong class="text-slate-300">Pre-TGE positions</strong>: held at cash cost basis (1.00x MOIC) pending tokenization, unless a current FDV is available — in which case the token allocation is marked at current FDV × allocation %, added to the equity cost basis for SAFE + warrant positions.</p>
+          <p><strong class="text-slate-300">Discounted Mark / Discounted MOIC</strong>: applies a 30% illiquidity discount per year of remaining lockup, compounded annually, to the locked token portion of each position. Equity held at cost basis and already-vested tokens are not further discounted. Discount factor = 0.70<sup>y</sup> where y is years until full token unlock; for pre-TGE positions TGE is assumed to be today, so the full vesting schedule counts as remaining lockup.</p>
           <p><strong class="text-slate-300">Vesting</strong>: computed from each position's contractual schedule against today's date. Charts show cumulative percent unlocked from TGE/effective date through full unlock.</p>
           <p><strong class="text-slate-300">Prices</strong>: fetched live from CoinGecko on page load. If the API is unavailable, last-known prices are used.</p>
         </div>

@@ -53,6 +53,7 @@ window.PORTFOLIO = {
       tokenPct: 0.00714,
       tokenCount: null,
       entryTokenFDV: 35_000_000,
+      currentFDV: 200_000_000, // most recent raise round valuation
       hasEquity: true,
       equityPct: 0.00714,
       equityFDV: 35_000_000,
@@ -135,10 +136,19 @@ window.PORTFOLIO = {
       tokenPct: 100_267 / 350_000_000,  // pro rata with equity: cash / Series A FDV
       tokenCount: null,
       entryTokenFDV: null, // falls back to equityFDV in display
+      currentFDV: 350_000_000, // no markup since Series A
       hasEquity: true,
       equityPct: 100_267 / 350_000_000, // cash / Series A FDV
       equityFDV: 350_000_000,
-      vesting: null,
+      vesting: {
+        label: 'Standard token warrant vesting (12-month cliff, 1/36 monthly to month 48)',
+        startDate: null, // TGE pending
+        cliffMonths: 12,
+        cliffPct: 0,
+        monthlyPct: 1 / 36,
+        endMonths: 48,
+        tgeLabel: 'TGE pending',
+      },
       notes:
         'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation; allocation derived from cash deployed ÷ round FDV.',
     },

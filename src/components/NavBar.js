@@ -74,6 +74,7 @@ export default function NavBar({ page, go, scrolled }) {
         {/* Nav links */}
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           {navLink("Home", "home")}
+          {navLink("Manifesto", "manifesto")}
           {navLink("Portfolio", "portfolio")}
           {navLink("Team", "team")}
           {navLink("News & Insights", "news")}
