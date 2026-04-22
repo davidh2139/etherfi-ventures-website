@@ -25,10 +25,10 @@ window.PORTFOLIO = {
       cashDeployed: 1_000_000,
       tokenPct: 0.10, // 2.5% paid + 7.5% strategic grant
       tokenCount: null,
-      entryTokenFDV: 40_000_000,
+      entryTokenFDV: 10_000_000, // blended: $1M cash / 10% combined allocation
       hasEquity: true,
       equityPct: 0.10, // 2.5% paid + 7.5% strategic grant
-      equityFDV: 40_000_000,
+      equityFDV: 10_000_000, // blended: $1M cash / 10% combined equity
       vesting: {
         label: '12-month cliff (no release); 1/36 monthly thereafter to month 48',
         startDate: null, // TGE pending
@@ -39,7 +39,7 @@ window.PORTFOLIO = {
         tgeLabel: 'TGE pending',
       },
       notes:
-        '$1M deployed for 2.5% equity + 2.5% token allocation at $40M entry FDV. Strategic relationship adds 7.5% equity and 7.5% token allocation with no cash cost, bringing the combined position to 10% equity / 10% token.',
+        '$1M deployed for 2.5% equity + 2.5% token allocation at $40M round FDV. Strategic relationship adds 7.5% equity + 7.5% token allocation with no cash cost; combined position is 10% equity / 10% token. Blended entry FDV of $10M reflects cash deployed ÷ combined allocation.',
     },
     {
       id: 'rise',
@@ -106,8 +106,8 @@ window.PORTFOLIO = {
       cashDeployed: 1_000_000,
       tokenPct: 0.02, // 1% SAFT + 1% strategic grant
       tokenCount: 200_000_000, // 100M SAFT + 100M strategic
-      entryTokenFDV: 100_000_000,
-      entryTokenPositionValue: 1_000_000, // paid portion: 1% × $100M
+      entryTokenFDV: 50_000_000, // blended: $1M cash / 2% combined allocation
+      entryTokenPositionValue: 1_000_000, // 2% × $50M blended = cash deployed
       hasEquity: false,
       tgeDate: '2026-01-21',
       vesting: {
@@ -121,7 +121,7 @@ window.PORTFOLIO = {
         firstUnlockLabel: 'First unlock: Jan 21, 2027',
       },
       notes:
-        '$1M SAFT purchased 1% of supply (100M GWEI) at $100M entry FDV. Strategic relationship adds a further 1% grant (100M GWEI) with no cash cost, bringing the combined position to 2% / 200M GWEI. The strategic tranche begins vesting Apr 15, 2026; the displayed schedule reflects the SAFT timeline.',
+        '$1M SAFT purchased 1% of supply (100M GWEI) at $100M round FDV. Strategic relationship adds a further 1% grant (100M GWEI) with no cash cost; combined position is 2% / 200M GWEI. Blended entry FDV of $50M reflects cash deployed ÷ combined allocation. The strategic tranche begins vesting Apr 15, 2026; the displayed schedule reflects the SAFT timeline.',
     },
     {
       id: 'symbiotic',
