@@ -28,34 +28,21 @@ export default function MatrixRain({ opacity = 0.20 }) {
     let animationFrameId;
     let frame = 0; // Frame counter used for throttling updates
 
-    /**
-     * Resizes the canvas to match its container's rendered size.
-     * This ensures the animation is crisp on any screen size / DPI.
-     */
+    const characters =
+      "ｦｱｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*()";
+    const fontSize = 14;
+    let columns = 0;
+    let drops = [];
+
     const resize = () => {
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
-
-      // Recalculate columns whenever the canvas size changes
       columns = Math.floor(canvas.width / fontSize);
       drops = new Array(columns).fill(1);
     };
 
-    // Initial sizing + listen for window resize
     resize();
     window.addEventListener("resize", resize);
-
-    // Characters used in the rain (katakana + alphanumerics + symbols)
-    // This gives the authentic "Matrix" aesthetic
-    const characters =
-      "ｦｱｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*()";
-
-    const fontSize = 14;
-    let columns = Math.floor(canvas.width / fontSize);
-
-    // `drops` tracks the vertical position (in rows) of each column's rain drop
-    // A new drop starts at the top (value = 1) when the previous one resets
-    let drops = new Array(columns).fill(1);
 
     /**
      * Main animation loop.
