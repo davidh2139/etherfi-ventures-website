@@ -126,31 +126,56 @@
       if (pos.tokenCount) out.vestedTokens = pos.tokenCount * out.vestedFraction;
     }
 
-    // Position mark methodology:
-    // - Strategic allocation (no cash): mark = current token value.
-    // - SAFE + token warrant (hasEquity=true): cash bought equity; token warrant is separate.
-    //     Equity held at cost + token allocation at current value (live price or currentFDV).
-    // - SAFT (no equity): cash bought tokens directly. Mark = current token value.
-    // - Pre-TGE without a currentFDV: held at cash cost basis (1.00x).
-    if (pos.cashDeployed === 0) {
-      out.positionMark = out.currentTokenValue || 0;
-    } else if (!pos.hasEquity) {
-      out.positionMark = out.currentTokenValue != null ? out.currentTokenValue : pos.cashDeployed;
+    // Position mark methodology — three regimes:
+    //
+    // (1) pureEquity: cash is the basis for a single pro-rata claim. Mark
+    //     equals cash when entry FDV == current FDV (e.g. Symbiotic).
+    //
+    // (2) hasStrategicGrant: cash is the *paid* basis; the strategic grant
+    //     adds tokens that cost nothing. Mark = cash (equity at cost) +
+    //     current token value (which captures paid + strategic tokens at
+    //     current price). This correctly surfaces the day-1 strategic bonus.
+    //
+    // (3) default (non-strategic, SAFE+warrant or SAFT): cash was the
+    //     combined basis for equity + token warrant. Adding token value on
+    //     top of cash would double-count (cash already paid for the warrant
+    //     at round). Instead mark by FDV ratio: cash × (currentFDV / entryFDV).
+    //     If tokens decline below round, mark correctly shows the loss.
+    if (pos.pureEquity) {
+      out.positionMark = pos.cashDeployed;
+    } else if (pos.hasStrategicGrant) {
+      if (pos.cashDeployed === 0) {
+        out.positionMark = out.currentTokenValue || 0;
+      } else if (!pos.hasEquity) {
+        out.positionMark = out.currentTokenValue != null ? out.currentTokenValue : pos.cashDeployed;
+      } else {
+        out.positionMark = out.currentTokenValue != null
+          ? pos.cashDeployed + out.currentTokenValue
+          : pos.cashDeployed;
+      }
     } else {
-      out.positionMark = out.currentTokenValue != null
-        ? pos.cashDeployed + out.currentTokenValue
-        : pos.cashDeployed;
+      const entryFDV = pos.entryTokenFDV ?? pos.equityFDV;
+      const currentFDV = out.currentTokenFDV;
+      if (entryFDV && currentFDV && pos.cashDeployed > 0) {
+        out.positionMark = pos.cashDeployed * (currentFDV / entryFDV);
+      } else {
+        out.positionMark = pos.cashDeployed;
+      }
     }
 
     if (pos.cashDeployed > 0 && out.positionMark != null) {
       out.markMultiple = out.positionMark / pos.cashDeployed;
     }
 
-    // Illiquidity discount. Two regimes:
-    //   1. Pure-equity (Symbiotic): a flat haircut on cash since there is no
-    //      vesting schedule and no separate token mark.
-    //   2. Standard: 30%/yr compounded on the locked token portion; equity
-    //      held at cost is not further discounted.
+    // Illiquidity discount — three regimes matching the mark methodology:
+    //
+    // (1) pureEquity: flat haircut on the cash-based mark.
+    // (2) hasStrategicGrant: 30%/yr compounded on the locked token portion
+    //     only; equity (cash basis) is not further discounted.
+    // (3) default (ratio-marked): 30%/yr compounded on the whole mark, since
+    //     the mark itself is derived entirely from (locked) token FDV and
+    //     the cash is already spent — the only future realizable value is
+    //     the locked tokens unlocking at whatever price then prevails.
     if (pos.pureEquity) {
       const flat = pos.flatDiscount ?? 0;
       out.discountFactor = 1 - flat;
@@ -161,22 +186,27 @@
       const discountFactor = Math.pow(1 - DISCOUNT_RATE_PER_YEAR, yearsLocked);
       out.yearsUntilFullUnlock = yearsLocked;
       out.discountFactor = discountFactor;
+      const vestedFrac = out.vestedFraction || 0;
+      const blendedFactor = vestedFrac + (1 - vestedFrac) * discountFactor;
 
-      let discountedTokenValue = null;
-      if (out.currentTokenValue != null) {
-        const vestedFrac = out.vestedFraction || 0;
-        discountedTokenValue = out.currentTokenValue * (vestedFrac + (1 - vestedFrac) * discountFactor);
-      }
-      out.discountedTokenValue = discountedTokenValue;
+      if (pos.hasStrategicGrant) {
+        let discountedTokenValue = null;
+        if (out.currentTokenValue != null) {
+          discountedTokenValue = out.currentTokenValue * blendedFactor;
+        }
+        out.discountedTokenValue = discountedTokenValue;
 
-      if (pos.cashDeployed === 0) {
-        out.discountedPositionMark = discountedTokenValue || 0;
-      } else if (!pos.hasEquity) {
-        out.discountedPositionMark = discountedTokenValue != null ? discountedTokenValue : pos.cashDeployed;
+        if (pos.cashDeployed === 0) {
+          out.discountedPositionMark = discountedTokenValue || 0;
+        } else if (!pos.hasEquity) {
+          out.discountedPositionMark = discountedTokenValue != null ? discountedTokenValue : pos.cashDeployed;
+        } else {
+          out.discountedPositionMark = discountedTokenValue != null
+            ? pos.cashDeployed + discountedTokenValue
+            : pos.cashDeployed;
+        }
       } else {
-        out.discountedPositionMark = discountedTokenValue != null
-          ? pos.cashDeployed + discountedTokenValue
-          : pos.cashDeployed;
+        out.discountedPositionMark = (out.positionMark || 0) * blendedFactor;
       }
     }
 
@@ -437,7 +467,11 @@
     if (entryFDV != null) metrics.push({ label: 'Entry FDV', value: fmtUSD(entryFDV, { compact: true }) });
     if (p.currentPrice != null) metrics.push({ label: 'Current Price', value: fmtPrice(p.currentPrice) + ' / ' + p.tokenSymbol });
     if (p.currentTokenFDV != null) metrics.push({ label: 'Current FDV', value: fmtUSD(p.currentTokenFDV, { compact: true }) });
-    if (!p.pureEquity && p.currentTokenValue != null) metrics.push({ label: 'Token Mark', value: fmtUSD(p.currentTokenValue, { compact: true }) });
+    // Token Mark only shown for strategic positions where it differs from
+    // Current Mark (Current Mark = cash + Token Mark). For non-strategic
+    // positions the ratio method makes Current Mark == Token Mark, so the
+    // metric would be redundant.
+    if (p.hasStrategicGrant && p.currentTokenValue != null) metrics.push({ label: 'Token Mark', value: fmtUSD(p.currentTokenValue, { compact: true }) });
     if (p.positionMark != null && p.cashDeployed > 0) metrics.push({ label: 'Current Mark', value: fmtUSD(p.positionMark, { compact: true }) });
     if (p.markMultiple != null) metrics.push({ label: 'MOIC', value: coloredMultiple(p.markMultiple) });
     if (p.discountedPositionMark != null && p.cashDeployed > 0) metrics.push({ label: 'Disc. Mark', value: fmtUSD(p.discountedPositionMark, { compact: true }) });

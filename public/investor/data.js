@@ -22,6 +22,7 @@ window.PORTFOLIO = {
       position: 'Seed',
       status: 'Pre-TGE',
       tokenLive: false,
+      hasStrategicGrant: true,
       cashDeployed: 1_000_000,
       tokenPct: 0.10, // 2.5% paid + 7.5% strategic grant
       tokenCount: null,
@@ -99,10 +100,11 @@ window.PORTFOLIO = {
     {
       id: 'ethgas',
       company: 'ETHGas',
-      subtitle: 'Ethereum preconfirmation infrastructure',
+      subtitle: 'Ethereum blockspace futures',
       position: 'Seed',
       status: 'Live — in lock-up',
       tokenLive: true,
+      hasStrategicGrant: true,
       tokenSymbol: 'GWEI',
       totalSupply: 10_000_000_000,
       cashDeployed: 1_000_000,
