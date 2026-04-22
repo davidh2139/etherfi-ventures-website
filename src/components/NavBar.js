@@ -77,6 +77,20 @@ export default function NavBar({ page, go, scrolled }) {
           {navLink("Portfolio", "portfolio")}
           {navLink("Team", "team")}
           {navLink("News & Insights", "news")}
+          <a
+            href="/investor/"
+            style={{
+              fontSize: 18,
+              fontWeight: 500,
+              color: "#ffffff",
+              borderBottom: "2px solid transparent",
+              paddingBottom: 4,
+              transition: "all 0.25s",
+              textDecoration: "none",
+            }}
+          >
+            Investors
+          </a>
         </div>
       </div>
     </nav>

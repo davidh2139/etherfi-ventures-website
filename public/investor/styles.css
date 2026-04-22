@@ -1,0 +1,35 @@
+/* Custom overrides layered on top of Tailwind */
+html {
+  color-scheme: dark;
+}
+
+body {
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+}
+
+/* Softer scrollbars in dark theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+*::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+/* Table font tightening */
+table {
+  font-feature-settings: 'tnum';
+}
+
+/* Smooth chart canvas rendering */
+canvas {
+  image-rendering: -webkit-optimize-contrast;
+}
