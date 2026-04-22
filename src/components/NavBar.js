@@ -1,7 +1,6 @@
 import React from "react";
 import SvgLogo from "./SvgLogo";
 import { etherfiNavUrl } from "../config/logos";
-import { c } from "../config/theme";
 
 /**
  * NavBar — Fixed top navigation bar with glass effect so Matrix rain shows through.

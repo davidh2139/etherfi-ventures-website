@@ -3,7 +3,6 @@ import SvgLogo from "../components/SvgLogo";
 import Modal from "../components/Modal";
 import { PORTFOLIO } from "../config/portfolio";
 import { LOGO_MAP } from "../config/logos";
-import { c } from "../config/theme";
 
 export default function PortfolioPage() {
   const [sel, setSel] = useState(null);
