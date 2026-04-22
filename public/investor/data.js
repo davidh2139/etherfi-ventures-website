@@ -126,7 +126,7 @@ window.PORTFOLIO = {
     {
       id: 'symbiotic',
       company: 'Symbiotic',
-      subtitle: 'Universal restaking protocol · via GPRP Holdings SPV',
+      subtitle: 'Universal restaking protocol',
       position: 'Series A',
       status: 'Pre-TGE',
       tokenLive: false,
@@ -136,10 +136,10 @@ window.PORTFOLIO = {
       entryTokenFDV: null,
       hasEquity: true,
       equityPct: null,
-      equityFDV: 300_000_000,
+      equityFDV: 350_000_000,
       vesting: null,
       notes:
-        'Invested via GPRP Holdings SPV alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at ~$300M pre-money.',
+        'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation.',
     },
   ],
 };

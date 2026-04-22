@@ -214,10 +214,11 @@
     const tr = document.getElementById('positions-thead');
     tr.innerHTML = POSITION_COLUMNS.map(col => {
       const active = sortState.key === col.key;
-      const arrow = active ? (sortState.dir === 'asc' ? ' ↑' : ' ↓') : '';
+      const arrow = active ? (sortState.dir === 'asc' ? '↑' : '↓') : '';
       const alignClass = col.align === 'right' ? 'text-right' : 'text-left';
       const activeClass = active ? 'text-slate-200' : '';
-      return `<th class="${alignClass} font-medium px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors ${activeClass}" data-sort-key="${col.key}">${col.label}<span class="inline-block w-3 text-sky-400">${arrow}</span></th>`;
+      const arrowSpan = arrow ? ` <span class="text-sky-400">${arrow}</span>` : '';
+      return `<th class="${alignClass} font-medium px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors ${activeClass}" data-sort-key="${col.key}">${col.label}${arrowSpan}</th>`;
     }).join('');
     tr.querySelectorAll('th').forEach(th => {
       th.addEventListener('click', () => {
