@@ -26,6 +26,7 @@ window.PORTFOLIO = {
       tokenPct: 0.10, // 2.5% paid + 7.5% strategic grant
       tokenCount: null,
       entryTokenFDV: 10_000_000, // blended: $1M cash / 10% combined allocation
+      currentFDV: 40_000_000, // latest valuation (round FDV; no markup/markdown since)
       hasEquity: true,
       equityPct: 0.10, // 2.5% paid + 7.5% strategic grant
       equityFDV: 10_000_000, // blended: $1M cash / 10% combined equity
@@ -131,15 +132,15 @@ window.PORTFOLIO = {
       status: 'Pre-TGE',
       tokenLive: false,
       cashDeployed: 100_267,
-      tokenPct: null,
+      tokenPct: 100_267 / 350_000_000,  // pro rata with equity: cash / Series A FDV
       tokenCount: null,
-      entryTokenFDV: null,
+      entryTokenFDV: null, // falls back to equityFDV in display
       hasEquity: true,
-      equityPct: null,
+      equityPct: 100_267 / 350_000_000, // cash / Series A FDV
       equityFDV: 350_000_000,
       vesting: null,
       notes:
-        'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation.',
+        'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation; allocation derived from cash deployed ÷ round FDV.',
     },
   ],
 };

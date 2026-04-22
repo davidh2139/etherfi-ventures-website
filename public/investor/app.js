@@ -98,6 +98,10 @@
       out.currentPrice = price;
       if (pos.totalSupply) out.currentTokenFDV = price * pos.totalSupply;
       if (pos.tokenCount) out.currentTokenValue = price * pos.tokenCount;
+    } else if (pos.currentFDV != null) {
+      // No live market; mark to the manually-set current FDV (e.g. last round).
+      out.currentTokenFDV = pos.currentFDV;
+      if (pos.tokenPct != null) out.currentTokenValue = pos.currentFDV * pos.tokenPct;
     }
 
     if (pos.vesting) {
@@ -106,11 +110,11 @@
     }
 
     // Position mark methodology:
-    // - Strategic allocation (no cash): mark = current token value (upside at market)
+    // - Strategic allocation (no cash): mark = current token value.
     // - SAFE + token warrant (hasEquity=true): cash bought equity; token warrant is separate.
-    //     Equity held at cost + token allocation at market (if live).
-    // - SAFT (no equity): cash bought tokens directly. Mark at current token value if live.
-    // - Pre-TGE in all cases: mark at cash cost basis.
+    //     Equity held at cost + token allocation at current value (live price or currentFDV).
+    // - SAFT (no equity): cash bought tokens directly. Mark = current token value.
+    // - Pre-TGE without a currentFDV: held at cash cost basis (1.00x).
     if (pos.cashDeployed === 0) {
       out.positionMark = out.currentTokenValue || 0;
     } else if (!pos.hasEquity) {
@@ -151,10 +155,10 @@
       {
         label: 'Current Mark',
         value: fmtUSD(currentMark, { compact: true }),
-        sub: 'Live tokens at market; pre-TGE at cost',
+        sub: 'Live tokens at market; pre-TGE at last-known FDV or cost',
       },
       {
-        label: 'Mark Multiple',
+        label: 'MOIC',
         value: fmtMultiple(markMultiple),
         sub: 'Mark ÷ capital deployed',
         positive: markMultiple != null && markMultiple >= 1,
@@ -192,7 +196,7 @@
     { key: 'entryTokenFDV',     label: 'Entry FDV',     align: 'right', type: 'number',  accessor: p => p.entryTokenFDV ?? p.equityFDV ?? 0 },
     { key: 'currentTokenFDV',   label: 'Current FDV',   align: 'right', type: 'number',  accessor: p => p.currentTokenFDV || 0 },
     { key: 'positionMark',      label: 'Current Value', align: 'right', type: 'number',  accessor: p => p.positionMark || 0 },
-    { key: 'markMultiple',      label: 'Mark',          align: 'right', type: 'number',  accessor: p => p.markMultiple || 0 },
+    { key: 'markMultiple',      label: 'MOIC',          align: 'right', type: 'number',  accessor: p => p.markMultiple || 0 },
     { key: 'status',            label: 'Status',        align: 'left',  type: 'text',    accessor: p => p.status || '' },
   ];
 
@@ -359,7 +363,7 @@
     if (p.currentTokenValue != null) metrics.push({ label: 'Token Value', value: fmtUSD(p.currentTokenValue, { compact: true }) });
     if (p.positionMark != null && p.cashDeployed > 0) metrics.push({ label: 'Position Mark', value: fmtUSD(p.positionMark, { compact: true }) });
     if (p.markMultiple != null) metrics.push({
-      label: 'Multiple',
+      label: 'MOIC',
       value: `<span class="${p.markMultiple >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(p.markMultiple)}</span>`,
     });
     if (p.hasEquity && p.equityPct != null) metrics.push({ label: 'Equity', value: fmtPct(p.equityPct, 3) + (p.equityFDV ? ' @ ' + fmtUSD(p.equityFDV, { compact: true }) : '') });
