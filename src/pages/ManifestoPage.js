@@ -32,10 +32,26 @@ const strongStyle = {
 };
 
 const STATS = [
-  { v: "$5B+", label: "TVL — a balance sheet that matters in every integration and partnership conversation." },
-  { v: "$500M+", label: "Capital deployable into protocols — anchor deposits, launch LPs, first institutional counterparties." },
-  { v: "300,000+", label: "Users — a distribution channel most crypto startups would spend years and tens of millions trying to build." },
-  { v: "$1B+", label: "Annualized card volume — a working consumer crypto business with real surface area to plug product into." },
+  {
+    v: "$5B+",
+    label: "TVL",
+    desc: "A balance sheet that matters in every integration and partnership conversation.",
+  },
+  {
+    v: "$500M+",
+    label: "Deployable capital",
+    desc: "Anchor deposits, launch LPs, first institutional counterparties for your protocol.",
+  },
+  {
+    v: "300,000+",
+    label: "Users",
+    desc: "A distribution channel most crypto startups spend years and tens of millions trying to build.",
+  },
+  {
+    v: "$1B+",
+    label: "Annualized card volume",
+    desc: "A working consumer crypto business with real surface area to plug product into.",
+  },
 ];
 
 export default function ManifestoPage() {
@@ -111,19 +127,31 @@ export default function ManifestoPage() {
                   fontWeight: 700,
                   color: CYAN,
                   letterSpacing: -0.8,
-                  marginBottom: 8,
+                  lineHeight: 1.1,
                 }}
               >
                 {s.v}
               </div>
               <div
                 style={{
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.65)",
-                  lineHeight: 1.5,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#ffffff",
+                  marginTop: 10,
+                  letterSpacing: -0.2,
                 }}
               >
                 {s.label}
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.55)",
+                  lineHeight: 1.5,
+                  marginTop: 6,
+                }}
+              >
+                {s.desc}
               </div>
             </div>
           ))}
