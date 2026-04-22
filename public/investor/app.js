@@ -114,7 +114,11 @@
     } else if (pos.currentFDV != null) {
       // No live market; mark to the manually-set current FDV (e.g. last round).
       out.currentTokenFDV = pos.currentFDV;
-      if (pos.tokenPct != null) out.currentTokenValue = pos.currentFDV * pos.tokenPct;
+      // Pure-equity positions: cash represents the full pro-rata claim; no
+      // separate token value is added on top (would double-count).
+      if (!pos.pureEquity && pos.tokenPct != null) {
+        out.currentTokenValue = pos.currentFDV * pos.tokenPct;
+      }
     }
 
     if (pos.vesting) {
@@ -142,28 +146,38 @@
       out.markMultiple = out.positionMark / pos.cashDeployed;
     }
 
-    // Illiquidity-discounted mark: discount the token portion by remaining
-    // lockup duration; equity (held at cost) is not further discounted.
-    const yearsLocked = yearsUntilFullUnlock(pos.vesting, todayISO);
-    const discountFactor = Math.pow(1 - DISCOUNT_RATE_PER_YEAR, yearsLocked);
-    out.yearsUntilFullUnlock = yearsLocked;
-    out.discountFactor = discountFactor;
-
-    let discountedTokenValue = null;
-    if (out.currentTokenValue != null) {
-      const vestedFrac = out.vestedFraction || 0;
-      discountedTokenValue = out.currentTokenValue * (vestedFrac + (1 - vestedFrac) * discountFactor);
-    }
-    out.discountedTokenValue = discountedTokenValue;
-
-    if (pos.cashDeployed === 0) {
-      out.discountedPositionMark = discountedTokenValue || 0;
-    } else if (!pos.hasEquity) {
-      out.discountedPositionMark = discountedTokenValue != null ? discountedTokenValue : pos.cashDeployed;
+    // Illiquidity discount. Two regimes:
+    //   1. Pure-equity (Symbiotic): a flat haircut on cash since there is no
+    //      vesting schedule and no separate token mark.
+    //   2. Standard: 30%/yr compounded on the locked token portion; equity
+    //      held at cost is not further discounted.
+    if (pos.pureEquity) {
+      const flat = pos.flatDiscount ?? 0;
+      out.discountFactor = 1 - flat;
+      out.discountedTokenValue = null;
+      out.discountedPositionMark = pos.cashDeployed * (1 - flat);
     } else {
-      out.discountedPositionMark = discountedTokenValue != null
-        ? pos.cashDeployed + discountedTokenValue
-        : pos.cashDeployed;
+      const yearsLocked = yearsUntilFullUnlock(pos.vesting, todayISO);
+      const discountFactor = Math.pow(1 - DISCOUNT_RATE_PER_YEAR, yearsLocked);
+      out.yearsUntilFullUnlock = yearsLocked;
+      out.discountFactor = discountFactor;
+
+      let discountedTokenValue = null;
+      if (out.currentTokenValue != null) {
+        const vestedFrac = out.vestedFraction || 0;
+        discountedTokenValue = out.currentTokenValue * (vestedFrac + (1 - vestedFrac) * discountFactor);
+      }
+      out.discountedTokenValue = discountedTokenValue;
+
+      if (pos.cashDeployed === 0) {
+        out.discountedPositionMark = discountedTokenValue || 0;
+      } else if (!pos.hasEquity) {
+        out.discountedPositionMark = discountedTokenValue != null ? discountedTokenValue : pos.cashDeployed;
+      } else {
+        out.discountedPositionMark = discountedTokenValue != null
+          ? pos.cashDeployed + discountedTokenValue
+          : pos.cashDeployed;
+      }
     }
 
     if (pos.cashDeployed > 0 && out.discountedPositionMark != null) {
@@ -220,10 +234,10 @@
     ];
 
     document.getElementById('summary').innerHTML = cards.map(c => `
-      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-5">
+      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
         <div class="text-xs uppercase tracking-wider text-slate-500 mb-2">${c.label}</div>
-        <div class="text-2xl sm:text-3xl font-semibold tracking-tight ${c.positive === true ? 'text-emerald-400' : c.positive === false ? 'text-red-400' : 'text-slate-100'}">${c.value}</div>
-        <div class="text-xs text-slate-500 mt-1">${c.sub}</div>
+        <div class="text-2xl font-semibold tracking-tight ${c.positive === true ? 'text-emerald-400' : c.positive === false ? 'text-red-400' : 'text-slate-100'}">${c.value}</div>
+        <div class="text-xs text-slate-500 mt-2 leading-relaxed">${c.sub}</div>
       </div>
     `).join('');
   }
@@ -238,15 +252,17 @@
   // Column definitions drive the positions table: header rendering, click-to-sort
   // handlers, and default sort direction (text ascending, numeric descending).
   const POSITION_COLUMNS = [
-    { key: 'company',           label: 'Company',       align: 'left',  type: 'text',    accessor: p => p.company || '' },
-    { key: 'position',          label: 'Stage',         align: 'left',  type: 'text',    accessor: p => p.position || '' },
-    { key: 'cashDeployed',      label: 'Cash',          align: 'right', type: 'number',  accessor: p => p.cashDeployed || 0 },
-    { key: 'tokenPct',          label: 'Allocation',    align: 'right', type: 'number',  accessor: p => p.tokenPct || 0 },
-    { key: 'entryTokenFDV',     label: 'Entry FDV',     align: 'right', type: 'number',  accessor: p => p.entryTokenFDV ?? p.equityFDV ?? 0 },
-    { key: 'currentTokenFDV',   label: 'Current FDV',   align: 'right', type: 'number',  accessor: p => p.currentTokenFDV || 0 },
-    { key: 'positionMark',      label: 'Current Value', align: 'right', type: 'number',  accessor: p => p.positionMark || 0 },
-    { key: 'markMultiple',      label: 'MOIC',          align: 'right', type: 'number',  accessor: p => p.markMultiple || 0 },
-    { key: 'status',            label: 'Status',        align: 'left',  type: 'text',    accessor: p => p.status || '' },
+    { key: 'company',                  label: 'Company',          align: 'left',  type: 'text',   accessor: p => p.company || '' },
+    { key: 'position',                 label: 'Stage',            align: 'left',  type: 'text',   accessor: p => p.position || '' },
+    { key: 'cashDeployed',             label: 'Cash',             align: 'right', type: 'number', accessor: p => p.cashDeployed || 0 },
+    { key: 'tokenPct',                 label: 'Allocation',       align: 'right', type: 'number', accessor: p => p.tokenPct || 0 },
+    { key: 'entryTokenFDV',            label: 'Entry FDV',        align: 'right', type: 'number', accessor: p => p.entryTokenFDV ?? p.equityFDV ?? 0 },
+    { key: 'currentTokenFDV',          label: 'Current FDV',      align: 'right', type: 'number', accessor: p => p.currentTokenFDV || 0 },
+    { key: 'positionMark',             label: 'Current Mark',     align: 'right', type: 'number', accessor: p => p.positionMark || 0 },
+    { key: 'markMultiple',             label: 'MOIC',             align: 'right', type: 'number', accessor: p => p.markMultiple || 0 },
+    { key: 'discountedPositionMark',   label: 'Disc. Mark',       align: 'right', type: 'number', accessor: p => p.discountedPositionMark || 0 },
+    { key: 'discountedMarkMultiple',   label: 'Disc. MOIC',       align: 'right', type: 'number', accessor: p => p.discountedMarkMultiple || 0 },
+    { key: 'status',                   label: 'Status',           align: 'left',  type: 'text',   accessor: p => p.status || '' },
   ];
 
   let sortState = { key: 'company', dir: 'asc' };
@@ -292,24 +308,28 @@
 
   function renderPositionsTableBody() {
     const sorted = sortPositions(cachedEnriched);
+    const dash = '<span class="text-slate-500">—</span>';
+    const multipleCell = (m) => m == null
+      ? dash
+      : `<span class="${m >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(m)}</span>`;
+
     const rows = sorted.map(p => {
-      const multipleCell = p.markMultiple == null
-        ? '<span class="text-slate-500">—</span>'
-        : `<span class="${p.markMultiple >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(p.markMultiple)}</span>`;
       const entryFDV = p.entryTokenFDV ?? p.equityFDV;
       return `
         <tr class="hover:bg-slate-800/30">
           <td class="px-4 py-3">
-            <div class="font-medium">${p.company}</div>
-            <div class="text-xs text-slate-500">${p.subtitle}</div>
+            <div class="font-medium text-slate-100">${p.company}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${p.subtitle}</div>
           </td>
-          <td class="px-4 py-3 text-slate-300">${p.position}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-200">${p.cashDeployed > 0 ? fmtUSD(p.cashDeployed, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-200">${fmtPct(p.tokenPct, 3)}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-300">${entryFDV ? fmtUSD(entryFDV, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-300">${p.currentTokenFDV ? fmtUSD(p.currentTokenFDV, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-100">${p.positionMark != null ? fmtUSD(p.positionMark, { compact: true }) : '<span class="text-slate-500">—</span>'}</td>
-          <td class="px-4 py-3 text-right font-mono">${multipleCell}</td>
+          <td class="px-4 py-3 text-slate-200">${p.position}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-200">${p.cashDeployed > 0 ? fmtUSD(p.cashDeployed, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-200">${p.tokenPct != null ? fmtPct(p.tokenPct, 3) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-300">${entryFDV ? fmtUSD(entryFDV, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-300">${p.currentTokenFDV ? fmtUSD(p.currentTokenFDV, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-100">${p.positionMark != null ? fmtUSD(p.positionMark, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono">${multipleCell(p.markMultiple)}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-100">${p.discountedPositionMark != null ? fmtUSD(p.discountedPositionMark, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono">${multipleCell(p.discountedMarkMultiple)}</td>
           <td class="px-4 py-3">${statusBadge(p.status)}</td>
         </tr>
       `;
@@ -318,8 +338,10 @@
 
     const totalCash = cachedEnriched.reduce((a, p) => a + (p.cashDeployed || 0), 0);
     const totalMark = cachedEnriched.reduce((a, p) => a + (p.positionMark || 0), 0);
+    const totalDiscMark = cachedEnriched.reduce((a, p) => a + (p.discountedPositionMark || 0), 0);
     const totalMultiple = totalCash > 0 ? totalMark / totalCash : null;
-    const multCls = totalMultiple != null && totalMultiple >= 1 ? 'text-emerald-400' : 'text-red-400';
+    const totalDiscMultiple = totalCash > 0 ? totalDiscMark / totalCash : null;
+
     document.getElementById('positions-total').innerHTML = `
       <td class="px-4 py-3 text-slate-400 text-xs uppercase tracking-wider" colspan="2">Totals</td>
       <td class="px-4 py-3 text-right font-mono text-slate-100">${fmtUSD(totalCash, { compact: true })}</td>
@@ -327,7 +349,9 @@
       <td class="px-4 py-3"></td>
       <td class="px-4 py-3"></td>
       <td class="px-4 py-3 text-right font-mono text-slate-100">${fmtUSD(totalMark, { compact: true })}</td>
-      <td class="px-4 py-3 text-right font-mono ${multCls}">${fmtMultiple(totalMultiple)}</td>
+      <td class="px-4 py-3 text-right font-mono">${multipleCell(totalMultiple)}</td>
+      <td class="px-4 py-3 text-right font-mono text-slate-100">${fmtUSD(totalDiscMark, { compact: true })}</td>
+      <td class="px-4 py-3 text-right font-mono">${multipleCell(totalDiscMultiple)}</td>
       <td class="px-4 py-3"></td>
     `;
   }
@@ -359,26 +383,27 @@
       const positionCards = positions.map(p => renderPositionDetail(p)).join('');
       const chartIds = positions.filter(p => p.vesting && p.vesting.startDate).map(p => p.id);
 
+      const allocLabel = positions[0].pureEquity ? 'Equity %' : 'Allocation';
       return `
-        <article class="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-          <div class="px-6 py-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <article class="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+          <div class="p-6 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h3 class="text-2xl font-semibold tracking-tight">${company}</h3>
-              <p class="text-sm text-slate-400 mt-0.5">${subtitle}</p>
+              <h3 class="text-2xl font-semibold tracking-tight text-slate-100">${company}</h3>
+              <p class="text-sm text-slate-400 mt-1">${subtitle}</p>
             </div>
-            <div class="flex flex-wrap gap-5 text-right">
+            <div class="flex flex-wrap gap-6 text-right">
               <div>
-                <div class="text-xs uppercase tracking-wider text-slate-500">Cash</div>
-                <div class="font-mono text-slate-100">${fmtUSD(totalCash, { compact: true })}</div>
+                <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">Cash</div>
+                <div class="text-base font-mono font-medium text-slate-100">${fmtUSD(totalCash, { compact: true })}</div>
               </div>
               <div>
-                <div class="text-xs uppercase tracking-wider text-slate-500">Token %</div>
-                <div class="font-mono text-slate-100">${fmtPct(totalTokenPct, 2)}</div>
+                <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">${allocLabel}</div>
+                <div class="text-base font-mono font-medium text-slate-100">${fmtPct(totalTokenPct, 3)}</div>
               </div>
               ${totalPositionMark > 0 ? `
                 <div>
-                  <div class="text-xs uppercase tracking-wider text-slate-500">Position Mark</div>
-                  <div class="font-mono ${anyLive ? 'text-emerald-400' : 'text-slate-100'}">${fmtUSD(totalPositionMark, { compact: true })}</div>
+                  <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">Current Mark</div>
+                  <div class="text-base font-mono font-medium ${anyLive ? 'text-emerald-400' : 'text-slate-100'}">${fmtUSD(totalPositionMark, { compact: true })}</div>
                 </div>
               ` : ''}
             </div>
@@ -386,7 +411,7 @@
           <div class="divide-y divide-slate-800">
             ${positionCards}
           </div>
-          ${positions[0].notes ? `<div class="px-6 py-4 text-xs text-slate-400 border-t border-slate-800 bg-slate-900/60">${positions[0].notes}</div>` : ''}
+          ${positions[0].notes ? `<div class="p-6 text-xs text-slate-400 leading-relaxed border-t border-slate-800 bg-slate-950/40">${positions[0].notes}</div>` : ''}
         </article>
       `;
     }).join('');
@@ -401,59 +426,55 @@
 
   function renderPositionDetail(p) {
     const metrics = [];
-    metrics.push({ label: 'Stage', value: p.position });
+    const allocLabel = p.pureEquity ? 'Equity %' : 'Allocation';
+    const coloredMultiple = (m) =>
+      `<span class="${m >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(m)}</span>`;
+
     metrics.push({ label: 'Cash Deployed', value: p.cashDeployed > 0 ? fmtUSD(p.cashDeployed) : '—' });
-    metrics.push({ label: 'Token Allocation', value: p.tokenPct != null ? fmtPct(p.tokenPct, 3) : '—' });
-    if (p.tokenCount != null) metrics.push({ label: 'Tokens', value: fmtTokens(p.tokenCount) + (p.tokenSymbol ? ' ' + p.tokenSymbol : '') });
+    if (p.tokenPct != null) metrics.push({ label: allocLabel, value: fmtPct(p.tokenPct, 3) });
+    if (!p.pureEquity && p.tokenCount != null) metrics.push({ label: 'Tokens', value: fmtTokens(p.tokenCount) + (p.tokenSymbol ? ' ' + p.tokenSymbol : '') });
     const entryFDV = p.entryTokenFDV ?? p.equityFDV;
     if (entryFDV != null) metrics.push({ label: 'Entry FDV', value: fmtUSD(entryFDV, { compact: true }) });
     if (p.currentPrice != null) metrics.push({ label: 'Current Price', value: fmtPrice(p.currentPrice) + ' / ' + p.tokenSymbol });
     if (p.currentTokenFDV != null) metrics.push({ label: 'Current FDV', value: fmtUSD(p.currentTokenFDV, { compact: true }) });
-    if (p.currentTokenValue != null) metrics.push({ label: 'Token Value', value: fmtUSD(p.currentTokenValue, { compact: true }) });
-    if (p.positionMark != null && p.cashDeployed > 0) metrics.push({ label: 'Position Mark', value: fmtUSD(p.positionMark, { compact: true }) });
-    if (p.markMultiple != null) metrics.push({
-      label: 'MOIC',
-      value: `<span class="${p.markMultiple >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(p.markMultiple)}</span>`,
-    });
+    if (!p.pureEquity && p.currentTokenValue != null) metrics.push({ label: 'Token Mark', value: fmtUSD(p.currentTokenValue, { compact: true }) });
+    if (p.positionMark != null && p.cashDeployed > 0) metrics.push({ label: 'Current Mark', value: fmtUSD(p.positionMark, { compact: true }) });
+    if (p.markMultiple != null) metrics.push({ label: 'MOIC', value: coloredMultiple(p.markMultiple) });
+    if (p.discountedPositionMark != null && p.cashDeployed > 0) metrics.push({ label: 'Disc. Mark', value: fmtUSD(p.discountedPositionMark, { compact: true }) });
+    if (p.discountedMarkMultiple != null) metrics.push({ label: 'Disc. MOIC', value: coloredMultiple(p.discountedMarkMultiple) });
     if (p.hasEquity && p.equityPct != null) metrics.push({ label: 'Equity', value: fmtPct(p.equityPct, 3) + (p.equityFDV ? ' @ ' + fmtUSD(p.equityFDV, { compact: true }) : '') });
 
     let vestingBlock = '';
-    if (p.vesting) {
+    if (p.vesting && !p.pureEquity) {
       const pctVested = p.vestedFraction;
       const vestedTokens = p.vestedTokens;
       const lockedTokens = (p.tokenCount || 0) - vestedTokens;
       const vestedValue = p.currentPrice != null ? vestedTokens * p.currentPrice : null;
       const lockedValue = p.currentPrice != null ? lockedTokens * p.currentPrice : null;
 
+      const tile = (label, mainValue, sub) => `
+        <div class="rounded-lg bg-slate-950/50 border border-slate-800 p-3">
+          <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">${label}</div>
+          <div class="font-mono text-sm text-slate-100">${mainValue}</div>
+          ${sub ? `<div class="text-xs text-slate-500 font-mono mt-0.5">${sub}</div>` : ''}
+        </div>
+      `;
+
       vestingBlock = `
-        <div class="mt-5">
+        <div class="mt-6 pt-5 border-t border-slate-800/70">
           <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 mb-3">
-            <div class="text-sm font-medium text-slate-200">Vesting</div>
+            <div class="text-sm font-semibold text-slate-200">Vesting</div>
             <div class="text-xs text-slate-500">${p.vesting.label}</div>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div class="rounded-lg bg-slate-950/50 border border-slate-800 px-3 py-2">
-              <div class="text-[11px] uppercase tracking-wider text-slate-500">Vested</div>
-              <div class="font-mono text-slate-100">${fmtPct(pctVested, 1)}</div>
-              ${p.tokenCount ? `<div class="text-xs text-slate-500 font-mono">${fmtTokens(vestedTokens)}</div>` : ''}
-            </div>
-            <div class="rounded-lg bg-slate-950/50 border border-slate-800 px-3 py-2">
-              <div class="text-[11px] uppercase tracking-wider text-slate-500">Locked</div>
-              <div class="font-mono text-slate-100">${fmtPct(1 - pctVested, 1)}</div>
-              ${p.tokenCount ? `<div class="text-xs text-slate-500 font-mono">${fmtTokens(lockedTokens)}</div>` : ''}
-            </div>
-            <div class="rounded-lg bg-slate-950/50 border border-slate-800 px-3 py-2">
-              <div class="text-[11px] uppercase tracking-wider text-slate-500">Liquid Value</div>
-              <div class="font-mono text-slate-100">${vestedValue != null ? fmtUSD(vestedValue, { compact: true }) : '—'}</div>
-            </div>
-            <div class="rounded-lg bg-slate-950/50 border border-slate-800 px-3 py-2">
-              <div class="text-[11px] uppercase tracking-wider text-slate-500">Locked Value</div>
-              <div class="font-mono text-slate-100">${lockedValue != null ? fmtUSD(lockedValue, { compact: true }) : '—'}</div>
-            </div>
+            ${tile('Vested', fmtPct(pctVested, 1), p.tokenCount ? fmtTokens(vestedTokens) : null)}
+            ${tile('Locked', fmtPct(1 - pctVested, 1), p.tokenCount ? fmtTokens(lockedTokens) : null)}
+            ${tile('Liquid Value', vestedValue != null ? fmtUSD(vestedValue, { compact: true }) : '—')}
+            ${tile('Locked Value', lockedValue != null ? fmtUSD(lockedValue, { compact: true }) : '—')}
           </div>
           ${p.vesting.startDate ? `
-            <div class="relative rounded-xl bg-slate-950/50 border border-slate-800 p-4">
-              <div class="flex flex-wrap gap-4 text-xs text-slate-500 mb-3">
+            <div class="rounded-lg bg-slate-950/50 border border-slate-800 p-4">
+              <div class="flex flex-wrap gap-2 text-xs text-slate-500 mb-3">
                 <span>${p.vesting.tgeLabel || ''}</span>
                 ${p.vesting.firstUnlockLabel ? `<span>·</span><span>${p.vesting.firstUnlockLabel}</span>` : ''}
               </div>
@@ -467,15 +488,15 @@
     }
 
     return `
-      <div class="px-6 py-5">
-        <div class="flex items-start justify-between gap-4 mb-4">
-          <div class="text-sm font-medium text-slate-300">${p.position}</div>
+      <div class="p-6">
+        <div class="flex items-center justify-between gap-3 mb-5">
+          <div class="text-sm font-semibold text-slate-200">${p.position}</div>
           ${statusBadge(p.status)}
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
           ${metrics.map(m => `
             <div>
-              <div class="text-[11px] uppercase tracking-wider text-slate-500 mb-0.5">${m.label}</div>
+              <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">${m.label}</div>
               <div class="font-mono text-sm text-slate-100">${m.value}</div>
             </div>
           `).join('')}

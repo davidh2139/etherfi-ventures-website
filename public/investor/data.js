@@ -140,17 +140,14 @@ window.PORTFOLIO = {
       hasEquity: true,
       equityPct: 100_267 / 350_000_000, // cash / Series A FDV
       equityFDV: 350_000_000,
-      vesting: {
-        label: 'Standard token warrant vesting (12-month cliff, 1/36 monthly to month 48)',
-        startDate: null, // TGE pending
-        cliffMonths: 12,
-        cliffPct: 0,
-        monthlyPct: 1 / 36,
-        endMonths: 48,
-        tgeLabel: 'TGE pending',
-      },
+      // Pure-equity treatment: cash is a single pro-rata claim (no separate
+      // token mark-up on top). With entry FDV == current FDV, undiscounted
+      // MOIC stays 1.00x. Illiquidity handled via a flat 70% haircut.
+      pureEquity: true,
+      flatDiscount: 0.70,
+      vesting: null,
       notes:
-        'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation; allocation derived from cash deployed ÷ round FDV.',
+        'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation; allocation derived from cash deployed ÷ round FDV. Position marked as pure equity (single pro-rata claim), with a flat 70% illiquidity discount in lieu of the standard lockup-schedule discount.',
     },
   ],
 };
