@@ -29,9 +29,6 @@ export default function HomePage() {
       <section className="hero">
         <div className="hero__atmosphere" aria-hidden="true" />
         <div className="container hero__content">
-          <span className="eyebrow hero__eyebrow">
-            ether.fi Ventures · Fund I
-          </span>
           <h1 className="display-hero hero__title">
             A crypto-native venture firm built by founders, for founders.
           </h1>
