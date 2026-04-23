@@ -4,58 +4,55 @@ import Modal from "../components/Modal";
 import { PORTFOLIO } from "../config/portfolio";
 import { LOGO_MAP } from "../config/logos";
 
+/**
+ * Split a legacy stage string ("Seed 2024", "Series A 2025") into
+ * (stage, round) for the editorial metadata row. Keeps portfolio.js
+ * data untouched.
+ */
+function parseStage(s) {
+  if (!s) return { stage: "", round: "" };
+  const parts = s.trim().split(" ");
+  const last = parts[parts.length - 1];
+  const isYear = /^\d{4}$/.test(last);
+  return {
+    stage: (isYear ? parts.slice(0, -1).join(" ") : s).toUpperCase(),
+    round: isYear ? last : "",
+  };
+}
+
 export default function PortfolioPage() {
   const [sel, setSel] = useState(null);
 
   return (
-    <section
-      style={{
-        minHeight: "100vh",
-        padding: "120px 0 80px",
-        // background removed
-      }}
-    >
-      <div style={{ maxWidth: 1140, margin: "0 auto", padding: "0 40px" }}>
-        <h1
-          style={{
-            fontSize: 36,
-            fontWeight: 600,
-            color: "#ffffff",
-            margin: "0 0 24px",
-          }}
-        >
-          Portfolio Companies
-        </h1>
-        <hr style={{ border: "none", borderTop: "2px solid #ffffff20", margin: "0 0 40px" }} />
+    <section className="section" style={{ minHeight: "100vh" }}>
+      <div className="container">
+        <div className="section-header">
+          <span className="eyebrow">Fund I · 2024 vintage</span>
+          <h1 style={{ margin: 0 }}>Portfolio Companies</h1>
+        </div>
+        <hr className="hairline" style={{ marginBottom: "var(--space-48)" }} />
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            gap: 16,
-          }}
-        >
-          {PORTFOLIO.map((p, i) => (
-            <div
-              key={i}
-              onClick={() => setSel(p)}
-              style={{
-                padding: 24,
-                borderRadius: 16,
-                border: "1px solid #ffffff20",
-                background: "rgba(255,255,255,0.05)",
-                cursor: "pointer",
-                transition: "all 0.25s",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: 140,
-                overflow: "hidden",
-              }}
-            >
-              <SvgLogo url={LOGO_MAP[p.id]} width="90%" height="80px" />
-            </div>
-          ))}
+        <div className="portfolio-grid">
+          {PORTFOLIO.map((p, i) => {
+            const { stage, round } = parseStage(p.stage);
+            return (
+              <button
+                key={i}
+                className="portfolio-card"
+                onClick={() => setSel(p)}
+                aria-label={`View ${p.name}`}
+              >
+                <div className="portfolio-card__logo">
+                  <SvgLogo url={LOGO_MAP[p.id]} width="180px" height="44px" />
+                </div>
+                <p className="portfolio-card__desc">{p.desc}</p>
+                <div className="portfolio-card__meta">
+                  {stage && <span className="portfolio-card__stage">{stage}</span>}
+                  {round && <span className="portfolio-card__round">{round}</span>}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 

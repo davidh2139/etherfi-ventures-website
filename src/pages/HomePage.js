@@ -1,94 +1,59 @@
 import React from "react";
-import MatrixRain from "../components/MatrixRain";
+
+const METRICS = [
+  {
+    label: "Fund I",
+    value: "$20M",
+    qual: "Committed capital · 2024 vintage",
+  },
+  {
+    label: "Stage",
+    value: "PS → A",
+    qual: "Pre-seed to Series A · Ethereum & DeFi",
+  },
+  {
+    label: "Portfolio",
+    value: "5",
+    qual: "Active investments",
+  },
+  {
+    label: "Platform",
+    value: "$5B+",
+    qual: "ether.fi TVL supporting the book",
+  },
+];
 
 export default function HomePage() {
   return (
-    <section
-      style={{
-        position: "relative",
-        height: "100vh",
-        minHeight: 600,
-        background: "#0a0a1f",           // dark background
-        color: "#e0f8ff",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {/* MATRIX RAIN — always visible here */}
-      <MatrixRain opacity={0.20} />
-
-      {/* CENTERED TWO-LINE HEADLINE */}
-      <div
-        style={{
-          textAlign: "center",
-          maxWidth: "1500px",
-          padding: "0 40px",
-          zIndex: 2,
-        }}
-      >
-        {/* First line */}
-        <h1
-          style={{
-            fontSize: "clamp(42px, 6vw, 68px)",
-            fontWeight: 700,
-            margin: "0 0 20px 0",
-            letterSpacing: -1.8,
-            lineHeight: 1.15,
-            fontFamily: "monospace",
-          }}
-        >
-          We are{" "}
-          <span
-            className="glitch"
-            data-text="ether.fi ventures"
-            style={{
-              fontWeight: 700,
-              display: "inline-block",
-            }}
-          >
-            ether.fi ventures
+    <>
+      <section className="hero">
+        <div className="hero__atmosphere" aria-hidden="true" />
+        <div className="container hero__content">
+          <span className="eyebrow hero__eyebrow">
+            ether.fi Ventures · Fund I
           </span>
-          .
-        </h1>
+          <h1 className="display-hero hero__title">
+            A crypto-native venture firm built by founders, for founders.
+          </h1>
+          <p className="hero__kicker">
+            Backing the teams building the onchain financial system — alongside one of the largest operating platforms in crypto.
+          </p>
+        </div>
+      </section>
 
-        {/* Second line */}
-        <h2
-          style={{
-            fontSize: "clamp(28px, 4vw, 42px)",
-            fontWeight: 400,
-            margin: 0,
-            letterSpacing: -0.8,
-            lineHeight: 1.3,
-            fontFamily: "monospace",
-          }}
-        >
-          A crypto-native venture firm built by{" "}
-          <span
-            className="glitch"
-            data-text="founders"
-            style={{
-              fontWeight: 700,
-              display: "inline-block",
-            }}
-          >
-            founders
-          </span>{" "}
-          for{" "}
-          <span
-            className="glitch"
-            data-text="founders"
-            style={{
-              fontWeight: 700,
-              display: "inline-block",
-            }}
-          >
-            founders
-          </span>
-          .
-        </h2>
-      </div>
-    </section>
+      <section className="metrics">
+        <div className="container">
+          <div className="metrics__grid">
+            {METRICS.map((m, i) => (
+              <div key={i} className="metrics__cell">
+                <span className="eyebrow">{m.label}</span>
+                <span className="metrics__value">{m.value}</span>
+                <span className="metrics__qual">{m.qual}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

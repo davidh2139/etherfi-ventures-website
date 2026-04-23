@@ -1,49 +1,46 @@
 import React, { useState } from "react";
 import { NEWS } from "../config/news";
-import { BRAND } from "../config/theme";
+import { TOKENS } from "../config/theme";
 
 export default function NewsPage() {
   const [cat, setCat] = useState("All");
   const cats = ["All", "Portfolio News", "Insights"];
-  const filtered =
-    cat === "All" ? NEWS : NEWS.filter((n) => n.cat === cat);
+  const filtered = cat === "All" ? NEWS : NEWS.filter((n) => n.cat === cat);
 
   return (
-    <section
-      style={{
-        minHeight: "100vh",
-        padding: "120px 0 80px",
-      }}
-    >
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 40px" }}>
-        <h1
+    <section className="section" style={{ minHeight: "100vh" }}>
+      <div className="container container--narrow">
+        <div className="section-header">
+          <span className="eyebrow">Press &amp; writing</span>
+          <h1 style={{ margin: 0 }}>News &amp; Insights</h1>
+        </div>
+
+        {/* Filter tabs — editorial, not pills */}
+        <div
           style={{
-            fontSize: 36,                    // unchanged (as requested)
-            fontWeight: 600,
-            color: "#ffffff",
-            margin: "0 0 24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--space-24)",
+            paddingBottom: "var(--space-24)",
+            borderBottom: `1px solid ${TOKENS.border.subtle}`,
+            marginBottom: "var(--space-48)",
           }}
         >
-          News & Insights
-        </h1>
-
-        {/* Filter pills — bigger */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 40 }}>
           {cats.map((ct) => {
             const active = cat === ct;
             return (
               <span
                 key={ct}
                 onClick={() => setCat(ct)}
+                className="eyebrow"
                 style={{
-                  fontSize: 15,                    // ~25% bigger
-                  fontWeight: 600,
                   cursor: "pointer",
-                  padding: "8px 18px",
-                  borderRadius: 100,
-                  border: "1px solid " + (active ? BRAND.cyan + "60" : "#ffffff30"),
-                  color: active ? BRAND.cyan : "#ffffff",
-                  background: active ? BRAND.cyan + "12" : "transparent",
+                  color: active ? TOKENS.text.primary : TOKENS.text.tertiary,
+                  borderBottom: active
+                    ? `1px solid ${TOKENS.accent.primary}`
+                    : "1px solid transparent",
+                  paddingBottom: 6,
+                  transition: `color ${TOKENS.motion.fast}, border-color ${TOKENS.motion.fast}`,
                 }}
               >
                 {ct}
@@ -53,7 +50,7 @@ export default function NewsPage() {
         </div>
 
         {filtered.length === 0 && (
-          <p style={{ fontSize: 18, color: "#aaaaaa" }}>No posts yet.</p>
+          <p style={{ color: TOKENS.text.tertiary }}>No posts yet.</p>
         )}
 
         {filtered.map((b, i) => (
@@ -64,9 +61,10 @@ export default function NewsPage() {
             rel="noopener noreferrer"
             style={{
               display: "block",
-              padding: "28px 0",               // more breathing room
-              borderBottom: "1px solid #ffffff20",
+              padding: "var(--space-24) 0",
+              borderBottom: `1px solid ${TOKENS.border.subtle}`,
               textDecoration: "none",
+              color: "inherit",
             }}
           >
             <div
@@ -78,21 +76,27 @@ export default function NewsPage() {
                 gap: 12,
               }}
             >
-              <span style={{ fontSize: 20, fontWeight: 600, color: "#ffffff" }}>
+              <span
+                style={{
+                  fontFamily: TOKENS.font.serif,
+                  fontSize: 20,
+                  fontWeight: 400,
+                  lineHeight: 1.3,
+                  letterSpacing: "-0.01em",
+                  color: TOKENS.text.primary,
+                }}
+              >
                 {b.title}
               </span>
-              <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+              <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
+                <span className="eyebrow">{b.cat}</span>
                 <span
+                  className="numeric"
                   style={{
-                    fontSize: 14,               // bigger
-                    fontWeight: 600,
-                    color: BRAND.cyan,
-                    textTransform: "uppercase",
+                    fontSize: 12,
+                    color: TOKENS.text.tertiary,
                   }}
                 >
-                  {b.cat}
-                </span>
-                <span style={{ fontSize: 15, color: "#aaaaaa" }}>
                   {b.date}
                 </span>
               </div>

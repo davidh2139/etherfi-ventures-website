@@ -1,33 +1,26 @@
 import React from "react";
 import SvgLogo from "./SvgLogo";
 import { etherfiNavUrl } from "../config/logos";
+import { TOKENS } from "../config/theme";
 
 /**
- * NavBar — Fixed top navigation bar with glass effect so Matrix rain shows through.
+ * NavBar — fixed at the top, transparent over the hero, resolves to
+ * --bg-elevated with a hairline bottom border once the page has
+ * scrolled. Height 72. Wordmark left, links center-right, one ghost
+ * CTA on the far right.
  */
 export default function NavBar({ page, go, scrolled }) {
-  function navLink(label, key) {
-    const active = page === key;
-    return (
-      <span
-        key={key}
-        onClick={() => go(key)}
-        style={{
-          fontSize: 18,
-          fontWeight: 500,
-          cursor: "pointer",
-          color: "#ffffff",                    // always white
-          borderBottom: active
-            ? "2px solid #29BCFA"
-            : "2px solid transparent",
-          paddingBottom: 4,
-          transition: "all 0.25s",
-        }}
-      >
-        {label}
-      </span>
-    );
-  }
+  const navLink = (label, key) => (
+    <button
+      key={key}
+      type="button"
+      className="nav-item"
+      data-active={page === key}
+      onClick={() => go(key)}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <nav
@@ -37,27 +30,26 @@ export default function NavBar({ page, go, scrolled }) {
         left: 0,
         right: 0,
         zIndex: 100,
-        // Glassmorphism effect — always lets rain show through
-        background: scrolled 
-          ? "rgba(10, 10, 31, 0.75)"     // semi-transparent dark
-          : "transparent",
-        backdropFilter: scrolled ? "blur(16px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.1)" : "none",
-        transition: "all 0.3s ease",
+        height: 72,
+        background: scrolled ? TOKENS.bg.elevated : "transparent",
+        borderBottom: `1px solid ${scrolled ? TOKENS.border.subtle : "transparent"}`,
+        transition: `background ${TOKENS.motion.base}, border-color ${TOKENS.motion.base}`,
       }}
     >
       <div
         style={{
-          maxWidth: "100%",
-          margin: 0,
-          padding: "0 60px",
+          maxWidth: "var(--content-max)",
+          margin: "0 auto",
+          paddingLeft: "var(--gutter)",
+          paddingRight: "var(--gutter)",
+          height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          height: 68,
+          boxSizing: "border-box",
         }}
       >
-        {/* Logo */}
+        {/* Wordmark */}
         <span
           onClick={() => go("home")}
           style={{
@@ -68,28 +60,17 @@ export default function NavBar({ page, go, scrolled }) {
             lineHeight: 0,
           }}
         >
-          <SvgLogo url={etherfiNavUrl} width="300px" height="48px" />
+          <SvgLogo url={etherfiNavUrl} width="220px" height="36px" />
         </span>
 
-        {/* Nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        {/* Nav + CTA */}
+        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
           {navLink("Home", "home")}
           {navLink("Manifesto", "manifesto")}
           {navLink("Portfolio", "portfolio")}
           {navLink("Team", "team")}
-          {navLink("News & Insights", "news")}
-          <a
-            href="/investor/"
-            style={{
-              fontSize: 18,
-              fontWeight: 500,
-              color: "#ffffff",
-              borderBottom: "2px solid transparent",
-              paddingBottom: 4,
-              transition: "all 0.25s",
-              textDecoration: "none",
-            }}
-          >
+          {navLink("News", "news")}
+          <a href="/investor/" className="btn-ghost" style={{ marginLeft: 8 }}>
             Investors
           </a>
         </div>

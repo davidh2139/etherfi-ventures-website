@@ -1,109 +1,804 @@
-/* White navigation links on dark background */
+/* ============================================================
+   Design tokens — ether.fi Ventures
+
+   Single source of truth. Every color, border, and font reference
+   in the app resolves to one of these variables. No one-off
+   hex values anywhere.
+   ============================================================ */
+
+:root {
+  /* Base — dark institutional */
+  --bg-primary:    #0A0E14;
+  --bg-elevated:   #111621;
+  --bg-subtle:     #161C28;
+  --border-subtle: #1F2733;
+  --border-default:#2A3442;
+
+  /* Text — high-contrast, institutional. Ratios on --bg-primary:
+     primary 18:1 (AAA), secondary 8.8:1 (AAA), tertiary 5.4:1 (AA).
+     Tertiary nudged up from the spec's #6B7684 to clear AA body. */
+  --text-primary:  #F5F7FA;
+  --text-secondary:#A8B0BD;
+  --text-tertiary: #7F8896;
+  --text-disabled: #3F4855;
+
+  /* Accent — ether.fi teal/cyan, used SPARINGLY */
+  --accent-primary:#48CBD9;
+  --accent-hover:  #79E7E7;
+  --accent-muted:  #1E3A40;
+
+  /* Semantic — portfolio tags, status */
+  --status-live:   #5FB88A;
+  --status-exit:   #A8B0BD;
+  --status-pending:#C9A94A;
+
+  /* Typography stacks (fonts self-hosted via @fontsource). */
+  --font-serif: 'Source Serif 4', 'GT Super Display', Georgia, serif;
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Type scale (modular ratio 1.25, 16px base) */
+  --fs-hero:    clamp(56px, 7.5vw, 96px);
+  --fs-h1:      48px;
+  --fs-h2:      32px;
+  --fs-h3:      20px;
+  --fs-body:    16px;
+  --fs-small:   13px;
+  --fs-eyebrow: 11px;
+
+  /* Spacing — strict 8px scale, applied site-wide */
+  --space-8:   8px;
+  --space-16:  16px;
+  --space-24:  24px;
+  --space-48:  48px;
+  --space-96:  96px;
+  --space-160: 160px;
+
+  /* Section rhythm */
+  --section-py: 128px;
+  --section-py-sm: 80px;
+
+  /* Layout */
+  --content-max: 1280px;
+  --gutter: 40px;
+  --gutter-sm: 24px;
+
+  /* Motion */
+  --motion-fast: 120ms ease-out;
+  --motion-base: 150ms ease-out;
+}
+
+/* ============================================================
+   Base document
+   ============================================================ */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Type scale — applied to semantic elements.
+   Serif for display, sans for UI, mono for numeric.
+   ============================================================ */
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h1);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h2);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+h3 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+p {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0 0 1.25em;
+}
+
+/* ============================================================
+   Utility classes
+   ============================================================ */
+
+.display-hero {
+  font-family: var(--font-serif);
+  font-size: var(--fs-hero);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.kicker {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   Layout primitives
+   Use .section for vertical rhythm and .container for the
+   horizontal frame. Section padding collapses on narrow viewports.
+   ============================================================ */
+
+.section {
+  padding: var(--section-py) 0;
+}
+
+.section--compact {
+  padding: var(--space-96) 0;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+  box-sizing: border-box;
+}
+
+.container--narrow {
+  max-width: 900px;
+}
+
+.container--prose {
+  max-width: 680px;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: var(--section-py-sm) 0;
+  }
+  .section--compact {
+    padding: var(--space-48) 0;
+  }
+  .container {
+    padding-left: var(--gutter-sm);
+    padding-right: var(--gutter-sm);
+  }
+}
+
+/* Hairline — section separator, 1px subtle border. Never a heavier
+   rule; never a background-color change to denote sections. */
+.hairline {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: 0;
+}
+
+/* ============================================================
+   Buttons
+   Primary treatment is a ghost button. No filled accent buttons
+   anywhere, no gradients, no pills. Max radius 4px.
+   ============================================================ */
+
+.btn,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 24px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+.btn:hover,
+.btn-ghost:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.btn:disabled,
+.btn-ghost:disabled {
+  color: var(--text-disabled);
+  border-color: var(--border-subtle);
+  cursor: not-allowed;
+}
+
+/* Nav links — institutional sans, muted by default, primary on active.
+   Class is applied to a <button> for keyboard accessibility, so we
+   reset the browser default chrome. */
+.nav-item {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  display: inline-block;
+  padding: var(--space-8) 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: color var(--motion-fast);
+}
+
+.nav-item:hover,
+.nav-item[data-active="true"] {
+  color: var(--text-primary);
+}
+
+.nav-item[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--accent-primary);
+}
+
+/* ============================================================
+   Portfolio grid + card
+   Quiet card: no shadow, 1px hairline border, 32px padding,
+   only border color moves on hover.
+   ============================================================ */
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-24);
+}
+
+.portfolio-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 260px;
+  padding: 32px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--motion-fast);
+}
+
+.portfolio-card:hover {
+  border-color: var(--accent-primary);
+}
+
+.portfolio-card__logo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 56px;
+  margin-bottom: var(--space-24);
+}
+
+.portfolio-card__desc {
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-24);
+}
+
+.portfolio-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  line-height: 1;
+}
+
+.portfolio-card__stage {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  color: var(--text-primary);
+}
+
+.portfolio-card__round {
+  color: var(--text-tertiary);
+}
+
+/* ============================================================
+   Modal (portfolio detail)
+   Flat, bordered, 4px radius, no blur, no shadow.
+   ============================================================ */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(10, 14, 20, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-48);
+}
+
+.modal-card {
+  position: relative;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 48px;
+  max-width: 640px;
+  width: 100%;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 0;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color var(--motion-fast);
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  margin-top: var(--space-48);
+}
+
+.modal-actions__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+/* ============================================================
+   Hero
+   One display statement on a quiet dark field. The only allowed
+   atmospheric treatment is a single subtle radial fade; it reads
+   as light, not spectacle.
+   ============================================================ */
+
+.hero {
+  position: relative;
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero__atmosphere {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 35%,
+    rgba(72, 203, 217, 0.06),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.hero__content {
+  position: relative;
+  max-width: 960px;
+  padding-top: 72px;
+}
+
+.hero__eyebrow {
+  display: inline-block;
+  margin-bottom: var(--space-24);
+}
+
+.hero__title {
+  max-width: 22ch;
+  margin: 0 0 var(--space-24);
+}
+
+.hero__kicker {
+  max-width: 52ch;
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   Fund metrics — 4-cell editorial unit.
+   Eyebrow label, huge serif number (accent), mono qualifier.
+   ============================================================ */
+
+.metrics {
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.metrics__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+.metrics__cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-48) var(--space-24);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.metrics__cell:last-child {
+  border-right: 0;
+}
+
+.metrics__value {
+  font-family: var(--font-serif);
+  font-size: 44px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--accent-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.metrics__qual {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  letter-spacing: 0;
+}
+
+@media (max-width: 960px) {
+  .metrics__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .metrics__cell {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .metrics__cell:nth-child(even) {
+    border-right: 0;
+  }
+  .metrics__cell:nth-last-child(-n+2) {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .metrics__grid {
+    grid-template-columns: 1fr;
+  }
+  .metrics__cell {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .metrics__cell:last-child {
+    border-bottom: 0;
+  }
+}
+
+/* ============================================================
+   Longform essay — single-column, serif body, Paradigm treatment
+   ============================================================ */
+
+.essay {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.essay p {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  margin: 0 0 1.25em;
+}
+
+.essay h2 {
+  font-family: var(--font-serif);
+  font-size: var(--fs-h2);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 3em 0 0.75em;
+}
+
+.essay-hero {
+  text-align: left;
+  padding-top: var(--space-48);
+  padding-bottom: var(--space-48);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-96);
+}
+
+.essay-hero .eyebrow {
+  display: block;
+  margin-bottom: var(--space-24);
+}
+
+.essay-hero h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(44px, 6.5vw, 80px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0;
+  max-width: 18ch;
+}
+
+.essay-lead {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0 0 1.25em;
+}
+
+.essay-lead::first-letter {
+  font-family: var(--font-serif);
+  font-size: 64px;
+  font-weight: 400;
+  float: left;
+  line-height: 0.9;
+  padding: 6px 10px 0 0;
+  color: var(--accent-primary);
+}
+
+.essay-pullquote {
+  font-family: var(--font-serif);
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 2.5em 0;
+  padding-left: var(--space-24);
+  border-left: 1px solid var(--accent-primary);
+  max-width: 26ch;
+}
+
+.essay-emphasis {
+  color: var(--text-primary);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.essay-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: var(--space-48) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.essay-stats__cell {
+  padding: var(--space-24) var(--space-16);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.essay-stats__cell:last-child {
+  border-right: 0;
+}
+
+.essay-stats__value {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--accent-primary);
+  display: block;
+  margin-bottom: var(--space-8);
+  font-variant-numeric: tabular-nums;
+}
+
+.essay-stats__label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.essay-stats__desc {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  margin-top: var(--space-8);
+}
+
+@media (max-width: 680px) {
+  .essay-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .essay-stats__cell {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .essay-stats__cell:nth-child(even) {
+    border-right: 0;
+  }
+  .essay-stats__cell:nth-last-child(-n+2) {
+    border-bottom: 0;
+  }
+}
+
+.essay-cta {
+  margin-top: var(--space-96);
+  padding-top: var(--space-48);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.essay-cta__headline {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  margin: 0 0 var(--space-16);
+  color: var(--text-primary);
+}
+
+.essay-cta__sub {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-24);
+}
+
+.essay-cta__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--accent-primary);
+  text-decoration: none;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--accent-primary);
+  transition: color var(--motion-fast);
+}
+
+.essay-cta__link:hover {
+  color: var(--accent-hover);
+}
+
+/* Section header: editorial-masthead pattern — eyebrow + serif H2
+   + optional kicker. Sits above content blocks. */
+.section-header {
+  margin-bottom: var(--space-48);
+}
+
+.section-header .eyebrow {
+  display: block;
+  margin-bottom: var(--space-16);
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+.section-header .kicker {
+  margin-top: var(--space-16);
+  max-width: 56ch;
+}
+
+/* ============================================================
+   Links & interactive states
+   ============================================================ */
+
+a {
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color var(--motion-fast);
+}
+
+a:hover {
+  color: var(--accent-primary);
+}
+
 nav a,
 header a,
 .nav-link,
 .menu-item,
-a[href],
-button,
 .header-link,
 .top-nav a {
-  color: #ffffff !important;
+  color: var(--text-primary);
   text-decoration: none;
 }
 
-/* Optional: make nav text slightly brighter / hover effect */
 nav a:hover,
 header a:hover {
-  color: #29BCFA !important;
+  color: var(--accent-primary);
 }
 
-/* ============== GLOBAL DARK MATRIX BACKGROUND (all pages) ============== */
-body {
-  background: #0a0a1f !important;
-  margin: 0;
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
 }
 
-/* ============== EXACT GLITCH (Archivo Black) — 50% SLOWER ============== */
-@import url('https://fonts.googleapis.com/css?family=Archivo+Black');
-
-.glitch {
-  font-family: 'Archivo Black', sans-serif;
-  color: white;
-  position: relative;
-  display: inline-block;
-  text-transform: uppercase;
-}
-
-.glitch::before,
-.glitch::after {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #0a0a1f;
-}
-
-.glitch::before {
-  left: 2px;
-  text-shadow: -2px 0 #49FC00;
-  clip: rect(24px, 550px, 90px, 0);
-  animation: glitch-anim-2 6s infinite linear alternate-reverse;   /* was 3s → now 6s */
-}
-
-.glitch::after {
-  left: -2px;
-  text-shadow: -2px 0 #FC0049;
-  clip: rect(85px, 550px, 140px, 0);
-  animation: glitch-anim 5s infinite linear alternate-reverse;     /* was 2.5s → now 5s */
-}
-
-/* (chaotic keyframes stay the same) */
-@keyframes glitch-anim {
-  0%    { clip: rect(12px, 9999px, 56px, 0); }
-  5%    { clip: rect(68px, 9999px, 22px, 0); }
-  10%   { clip: rect(42px, 9999px, 84px, 0); }
-  15%   { clip: rect(8px, 9999px, 45px, 0); }
-  20%   { clip: rect(95px, 9999px, 18px, 0); }
-  25%   { clip: rect(33px, 9999px, 72px, 0); }
-  30%   { clip: rect(55px, 9999px, 31px, 0); }
-  35%   { clip: rect(19px, 9999px, 88px, 0); }
-  40%   { clip: rect(71px, 9999px, 14px, 0); }
-  45%   { clip: rect(27px, 9999px, 65px, 0); }
-  50%   { clip: rect(82px, 9999px, 39px, 0); }
-  55%   { clip: rect(44px, 9999px, 76px, 0); }
-  60%   { clip: rect(9px, 9999px, 52px, 0); }
-  65%   { clip: rect(63px, 9999px, 25px, 0); }
-  70%   { clip: rect(37px, 9999px, 91px, 0); }
-  75%   { clip: rect(81px, 9999px, 47px, 0); }
-  80%   { clip: rect(15px, 9999px, 68px, 0); }
-  85%   { clip: rect(50px, 9999px, 29px, 0); }
-  90%   { clip: rect(73px, 9999px, 11px, 0); }
-  95%   { clip: rect(24px, 9999px, 83px, 0); }
-  100%  { clip: rect(66px, 9999px, 35px, 0); }
-}
-
-@keyframes glitch-anim-2 {
-  0%    { clip: rect(65px, 9999px, 120px, 0); }
-  5%    { clip: rect(8px, 9999px, 45px, 0); }
-  10%   { clip: rect(42px, 9999px, 84px, 0); }
-  15%   { clip: rect(12px, 9999px, 56px, 0); }
-  20%   { clip: rect(95px, 9999px, 18px, 0); }
-  25%   { clip: rect(33px, 9999px, 72px, 0); }
-  30%   { clip: rect(55px, 9999px, 31px, 0); }
-  35%   { clip: rect(19px, 9999px, 88px, 0); }
-  40%   { clip: rect(71px, 9999px, 14px, 0); }
-  45%   { clip: rect(27px, 9999px, 65px, 0); }
-  50%   { clip: rect(82px, 9999px, 39px, 0); }
-  55%   { clip: rect(44px, 9999px, 76px, 0); }
-  60%   { clip: rect(9px, 9999px, 52px, 0); }
-  65%   { clip: rect(63px, 9999px, 25px, 0); }
-  70%   { clip: rect(37px, 9999px, 91px, 0); }
-  75%   { clip: rect(81px, 9999px, 47px, 0); }
-  80%   { clip: rect(15px, 9999px, 68px, 0); }
-  85%   { clip: rect(50px, 9999px, 29px, 0); }
-  90%   { clip: rect(73px, 9999px, 11px, 0); }
-  95%   { clip: rect(24px, 9999px, 83px, 0); }
-  100%  { clip: rect(66px, 9999px, 35px, 0); }
-}

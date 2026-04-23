@@ -11,8 +11,8 @@ export default function TeamPage() {
         key={k}
         onClick={() => setSel(open ? null : k)}
         style={{
-          padding: "20px 0",
-          borderBottom: "1px solid #ffffff20",
+          padding: "var(--space-24) 0",
+          borderBottom: "1px solid var(--border-subtle)",
           cursor: "pointer",
         }}
       >
@@ -111,35 +111,20 @@ export default function TeamPage() {
   }
 
   return (
-    <section
-      style={{
-        minHeight: "100vh",
-        padding: "120px 0 80px",
-      }}
-    >
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 40px" }}>
-        <h1
-          style={{
-            fontSize: 36,
-            fontWeight: 600,
-            color: "#ffffff",
-            margin: "0 0 48px",
-          }}
-        >
-          Team
-        </h1>
+    <section className="section" style={{ minHeight: "100vh" }}>
+      <div className="container container--narrow">
+        <div className="section-header">
+          <span className="eyebrow">The team</span>
+          <h1 style={{ margin: 0 }}>Team</h1>
+        </div>
 
         {TEAM_CORE.map((m, i) => row(m, "c" + i))}
 
         <div
+          className="eyebrow"
           style={{
-            fontSize: 13,
-            fontWeight: 600,
-            letterSpacing: 2,
-            textTransform: "uppercase",
-            color: "#aaaaaa",
-            marginTop: 40,
-            marginBottom: 20,
+            marginTop: "var(--space-96)",
+            marginBottom: "var(--space-24)",
           }}
         >
           Investment Committee Advisors
