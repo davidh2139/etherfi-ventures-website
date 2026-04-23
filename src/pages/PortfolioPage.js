@@ -27,7 +27,7 @@ export default function PortfolioPage() {
     <section className="section" style={{ minHeight: "100vh" }}>
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">Fund I · 2024 vintage</span>
+          <span className="eyebrow">Fund I · 2025 vintage</span>
           <h1 style={{ margin: 0 }}>Portfolio Companies</h1>
         </div>
         <hr className="hairline" style={{ marginBottom: "var(--space-48)" }} />

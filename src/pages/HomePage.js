@@ -4,7 +4,7 @@ const METRICS = [
   {
     label: "Fund I",
     value: "$20M",
-    qual: "Committed capital · 2024 vintage",
+    qual: "Committed capital · 2025 vintage",
   },
   {
     label: "Stage",
