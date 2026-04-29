@@ -276,6 +276,7 @@
     const F = P.fundLevel || {};
     const committed = F.committedCapital || 0;
     const distributions = F.distributions || 0;
+    const vintageYear = F.vintageISO ? new Date(F.vintageISO).getUTCFullYear() : null;
 
     const totalCash = enriched.reduce((a, p) => a + (p.cashDeployed || 0), 0);
     const currentMark = enriched.reduce((a, p) => a + (p.positionMark || 0), 0);
@@ -303,7 +304,7 @@
       {
         label: 'Committed',
         value: fmtUSD(committed, { compact: true }),
-        sub: 'Fund I · 2025 vintage',
+        sub: vintageYear ? `Fund I · ${vintageYear} vintage` : 'Fund I',
       },
       {
         label: 'Paid-In',
@@ -367,15 +368,16 @@
 
   // Column definitions drive the positions table: header rendering, click-to-sort
   // handlers, and default sort direction (text ascending, numeric descending).
-  // Trimmed to 8 columns so the full table fits at 1280px without horizontal
-  // scroll. Per-position Entry Val + Current Mark + gross MOIC remain visible
-  // in the company detail card below.
+  // Trimmed to 8 columns so the table fits at 1280px without scroll. The table
+  // shows position-level marks (not asset-level FDVs) so the chain reads
+  // top-to-bottom: Investment → Current Mark → Disc. NAV → Disc. MOIC. Asset
+  // FDV and entry FDV remain in the per-position detail card.
   const POSITION_COLUMNS = [
     { key: 'company',                  label: 'Company',          align: 'left',  type: 'text',   accessor: p => p.company || '' },
     { key: 'position',                 label: 'Stage',            align: 'left',  type: 'text',   accessor: p => p.position || '' },
     { key: 'cashDeployed',             label: 'Investment',       align: 'right', type: 'number', accessor: p => p.cashDeployed || 0 },
     { key: 'tokenPct',                 label: 'Ownership',        align: 'right', type: 'number', accessor: p => p.tokenPct || 0 },
-    { key: 'currentTokenFDV',          label: 'Current Val',      align: 'right', type: 'number', accessor: p => p.currentTokenFDV || 0 },
+    { key: 'positionMark',             label: 'Current Mark',     align: 'right', type: 'number', accessor: p => p.positionMark || 0 },
     { key: 'discountedPositionMark',   label: 'Disc. NAV (Est.)', align: 'right', type: 'number', accessor: p => p.discountedPositionMark || 0 },
     { key: 'discountedMarkMultiple',   label: 'Disc. MOIC',       align: 'right', type: 'number', accessor: p => p.discountedMarkMultiple || 0 },
     { key: 'status',                   label: 'Status',           align: 'left',  type: 'text',   accessor: p => p.status || '' },
@@ -439,7 +441,7 @@
           <td class="px-4 py-3 text-slate-200 whitespace-nowrap">${p.position}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-200 whitespace-nowrap">${p.cashDeployed > 0 ? fmtUSD(p.cashDeployed, { compact: true }) : dash}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-200 whitespace-nowrap">${p.tokenPct != null ? fmtPct(p.tokenPct, 2) : dash}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-300 whitespace-nowrap">${p.currentTokenFDV ? fmtUSD(p.currentTokenFDV, { compact: true }) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-100 whitespace-nowrap">${p.positionMark != null ? fmtUSD(p.positionMark, { compact: true }) : dash}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-100 whitespace-nowrap">${p.discountedPositionMark != null ? fmtUSD(p.discountedPositionMark, { compact: true }) : dash}</td>
           <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${multipleCell(p.discountedMarkMultiple)}</td>
           <td class="px-4 py-3 whitespace-nowrap">${statusBadge(p.status)}</td>
@@ -449,6 +451,7 @@
     document.getElementById('positions-table').innerHTML = rows;
 
     const totalCash = cachedEnriched.reduce((a, p) => a + (p.cashDeployed || 0), 0);
+    const totalMark = cachedEnriched.reduce((a, p) => a + (p.positionMark || 0), 0);
     const totalDiscMark = cachedEnriched.reduce((a, p) => a + (p.discountedPositionMark || 0), 0);
     const totalDiscMultiple = totalCash > 0 ? totalDiscMark / totalCash : null;
 
@@ -456,7 +459,7 @@
       <td class="px-4 py-3 text-slate-400 text-xs uppercase tracking-wider" colspan="2">Totals</td>
       <td class="px-4 py-3 text-right font-mono text-slate-100">${fmtUSD(totalCash, { compact: true })}</td>
       <td class="px-4 py-3 text-right">${dash}</td>
-      <td class="px-4 py-3 text-right">${dash}</td>
+      <td class="px-4 py-3 text-right font-mono text-slate-100">${fmtUSD(totalMark, { compact: true })}</td>
       <td class="px-4 py-3 text-right font-mono text-slate-100">${fmtUSD(totalDiscMark, { compact: true })}</td>
       <td class="px-4 py-3 text-right font-mono">${multipleCell(totalDiscMultiple)}</td>
       <td class="px-4 py-3 text-right">${dash}</td>
@@ -539,9 +542,9 @@
     if (p.tokenPct != null) metrics.push({ label: 'Ownership', value: fmtPct(p.tokenPct, 2) });
     if (!p.pureEquity && p.tokenCount != null) metrics.push({ label: 'Tokens', value: fmtTokens(p.tokenCount) + (p.tokenSymbol ? ' ' + p.tokenSymbol : '') });
     const entryFDV = p.entryTokenFDV ?? p.equityFDV;
-    if (entryFDV != null) metrics.push({ label: 'Entry Val', value: fmtUSD(entryFDV, { compact: true }) });
+    if (entryFDV != null) metrics.push({ label: 'Entry FDV', value: fmtUSD(entryFDV, { compact: true }) });
     if (p.currentPrice != null) metrics.push({ label: 'Current Price', value: fmtPrice(p.currentPrice) + ' / ' + p.tokenSymbol });
-    if (p.currentTokenFDV != null) metrics.push({ label: 'Current Val', value: fmtUSD(p.currentTokenFDV, { compact: true }) });
+    if (p.currentTokenFDV != null) metrics.push({ label: 'Current FDV', value: fmtUSD(p.currentTokenFDV, { compact: true }) });
     // Token Mark only shown for strategic positions where it differs from
     // Current Mark (Current Mark = cash + Token Mark). For non-strategic
     // positions the ratio method makes Current Mark == Token Mark, so the
