@@ -1,16 +1,47 @@
-/* Custom overrides layered on top of Tailwind */
+/* Custom overrides layered on top of Tailwind — institutional refinements
+   aligned to the main site's dark-purple + serif aesthetic. */
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.005em;
 }
 
-/* Softer scrollbars in dark theme */
+/* Bump the very small text up a notch — institutional reports keep
+   support copy at 13px, not 12px, so dense tables stay legible. */
+.text-xs { font-size: 13px !important; line-height: 1.55; }
+.text-\[11px\] { font-size: 12px !important; }
+.text-sm { font-size: 14.5px !important; line-height: 1.55; }
+
+/* Give table rows breathing room — the original px-4/py-3 read as a
+   developer-tool grid; px-5/py-4 reads as a printed report. */
+table th,
+table td {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+}
+
+/* Numbers use Plex Sans with tabular lining figures, not Plex Mono.
+   Plex Sans has a clean unslashed zero (Plex Mono's default zero is
+   slashed) and reads as institutional report copy rather than code. */
+.font-mono {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif !important;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  letter-spacing: 0;
+}
+
+/* Softer, editorial scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: #A3A3A3 transparent;
 }
 *::-webkit-scrollbar {
   height: 8px;
@@ -20,13 +51,64 @@ body {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: #A3A3A3;
+  border-radius: 1px;
 }
 
-/* Table font tightening */
+/* Near-square corners throughout — BlackRock/iShares report aesthetic. */
+.rounded-xl { border-radius: 2px !important; }
+.rounded-lg { border-radius: 2px !important; }
+.rounded-md { border-radius: 1px !important; }
+
+/* Table font tightening — lining tabular figures for report-like columns. */
 table {
-  font-feature-settings: 'tnum';
+  font-feature-settings: 'tnum', 'lnum';
+}
+
+/* Subtle zebra striping — institutional reports use this so eyes don't drift
+   across columns with many near-identical figures. */
+tbody tr:nth-child(even):not(:hover) {
+  background-color: rgba(15, 23, 42, 0.025);
+}
+
+/* Row hover wins over zebra; uses the navy accent at very low alpha. */
+tbody tr:hover {
+  background-color: rgba(0, 51, 141, 0.06) !important;
+}
+
+/* Stronger separator above the totals row; totals row itself reads slightly
+   heavier than an ordinary data row. */
+tfoot {
+  border-top: 2px solid #171717 !important;
+}
+tfoot tr td {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+
+/* Summary cards: keep short labels, long labels, and secondary lines well
+   composed. The label can wrap to 2 lines without throwing off card height
+   alignment; the secondary line stays on one line. */
+[id^="summary-"] > div {
+  display: flex;
+  flex-direction: column;
+}
+[id^="summary-"] > div > div:first-child {
+  min-height: 32px;        /* reserves space for 1- or 2-line label */
+  line-height: 1.35;
+}
+[id^="summary-"] > div > div:nth-child(3) {
+  white-space: nowrap;     /* "Non-Discounted: $X.XM" should never wrap */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tiny lift: table column headers nudged toward the accent on sort-active
+   states (applied inline in JS via text-slate-200 — this just tightens
+   the idle header weight so headers feel like labels, not data). */
+thead th {
+  font-weight: 600;
+  color: #404040;
 }
 
 /* Smooth chart canvas rendering */

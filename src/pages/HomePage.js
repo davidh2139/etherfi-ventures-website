@@ -8,8 +8,9 @@ const METRICS = [
   },
   {
     label: "Stage",
-    value: "PS → A",
-    qual: "Pre-seed to Series A · Ethereum & DeFi",
+    value: "Pre-Seed → Series A",
+    qual: "Intersection of finance, AI, and crypto",
+    valueVariant: "text",
   },
   {
     label: "Portfolio",
@@ -30,10 +31,12 @@ export default function HomePage() {
         <div className="hero__atmosphere" aria-hidden="true" />
         <div className="container hero__content">
           <h1 className="display-hero hero__title">
-            A crypto-native venture firm built by founders, for founders.
+            A crypto-native venture<br />
+            firm built by founders,<br />
+            for founders.
           </h1>
           <p className="hero__kicker">
-            Backing the teams building the onchain financial system — alongside one of the largest operating platforms in crypto.
+            Backing exceptional founders building the future of crypto, alongside one of the industry's largest operating platforms.
           </p>
         </div>
       </section>
@@ -44,7 +47,7 @@ export default function HomePage() {
             {METRICS.map((m, i) => (
               <div key={i} className="metrics__cell">
                 <span className="eyebrow">{m.label}</span>
-                <span className="metrics__value">{m.value}</span>
+                <span className={`metrics__value${m.valueVariant ? ` metrics__value--${m.valueVariant}` : ""}`}>{m.value}</span>
                 <span className="metrics__qual">{m.qual}</span>
               </div>
             ))}

@@ -30,7 +30,7 @@ export default function NavBar({ page, go, scrolled }) {
         left: 0,
         right: 0,
         zIndex: 100,
-        height: 72,
+        height: 88,
         background: scrolled ? TOKENS.bg.elevated : "transparent",
         borderBottom: `1px solid ${scrolled ? TOKENS.border.subtle : "transparent"}`,
         transition: `background ${TOKENS.motion.base}, border-color ${TOKENS.motion.base}`,
@@ -60,7 +60,7 @@ export default function NavBar({ page, go, scrolled }) {
             lineHeight: 0,
           }}
         >
-          <SvgLogo url={etherfiNavUrl} width="220px" height="36px" />
+          <SvgLogo url={etherfiNavUrl} width="347px" height="57px" />
         </span>
 
         {/* Nav + CTA */}

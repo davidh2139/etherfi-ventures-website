@@ -7,12 +7,12 @@
    ============================================================ */
 
 :root {
-  /* Base — dark institutional */
-  --bg-primary:    #0A0E14;
-  --bg-elevated:   #111621;
-  --bg-subtle:     #161C28;
-  --border-subtle: #1F2733;
-  --border-default:#2A3442;
+  /* Base — ether.fi purple-dark palette */
+  --bg-primary:    #120f29;  /* ether.fi purple-1100 */
+  --bg-elevated:   #1c1935;  /* ether.fi purple-1000 */
+  --bg-subtle:     #231f3d;
+  --border-subtle: #2a2745;
+  --border-default:#3c3865;  /* ether.fi purple-700 */
 
   /* Text — high-contrast, institutional. Ratios on --bg-primary:
      primary 18:1 (AAA), secondary 8.8:1 (AAA), tertiary 5.4:1 (AA).
@@ -34,8 +34,8 @@
 
   /* Typography stacks (fonts self-hosted via @fontsource). */
   --font-serif: 'Source Serif 4', 'GT Super Display', Georgia, serif;
-  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-mono:  'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans:  'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:  'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Type scale (modular ratio 1.25, 16px base) */
   --fs-hero:    clamp(56px, 7.5vw, 96px);
@@ -159,8 +159,9 @@ p {
 }
 
 .numeric {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0;
 }
 
 .kicker {
@@ -199,7 +200,7 @@ p {
 }
 
 .container--prose {
-  max-width: 680px;
+  max-width: 820px;
 }
 
 @media (max-width: 768px) {
@@ -350,11 +351,11 @@ p {
   display: flex;
   align-items: center;
   gap: var(--space-16);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--text-tertiary);
   line-height: 1;
 }
@@ -380,7 +381,7 @@ p {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(10, 14, 20, 0.88);
+  background: rgba(18, 15, 41, 0.88);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -461,7 +462,7 @@ p {
 
 .hero__content {
   position: relative;
-  max-width: 960px;
+  max-width: 1180px;
   padding-top: 72px;
 }
 
@@ -471,15 +472,16 @@ p {
 }
 
 .hero__title {
-  max-width: 22ch;
+  max-width: none;
   margin: 0 0 var(--space-24);
 }
 
 .hero__kicker {
-  max-width: 52ch;
+  max-width: none;
   font-size: 19px;
   line-height: 1.55;
   color: var(--text-secondary);
+  text-wrap: balance;
 }
 
 /* ============================================================
@@ -512,7 +514,7 @@ p {
 
 .metrics__value {
   font-family: var(--font-serif);
-  font-size: 44px;
+  font-size: 52px;
   font-weight: 400;
   letter-spacing: -0.02em;
   line-height: 1;
@@ -520,12 +522,25 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
+.metrics__value--text {
+  font-size: 32px;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
 .metrics__qual {
-  font-family: var(--font-mono);
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
   line-height: 1.5;
-  color: var(--text-tertiary);
+  color: var(--text-primary);
   letter-spacing: 0;
+  font-variant-numeric: tabular-nums lining-nums;
+  margin-top: auto;
+}
+
+.metrics .eyebrow {
+  color: var(--text-primary);
+  font-size: 12px;
 }
 
 @media (max-width: 960px) {
@@ -628,7 +643,7 @@ p {
 
 .essay-pullquote {
   font-family: var(--font-serif);
-  font-size: 27px;
+  font-size: 24px;
   font-weight: 400;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -636,7 +651,8 @@ p {
   margin: 2.5em 0;
   padding-left: var(--space-24);
   border-left: 1px solid var(--accent-primary);
-  max-width: 26ch;
+  max-width: none;
+  text-wrap: balance;
 }
 
 .essay-emphasis {
@@ -655,7 +671,7 @@ p {
 }
 
 .essay-stats__cell {
-  padding: var(--space-24) var(--space-16);
+  padding: var(--space-48) var(--space-24);
   border-right: 1px solid var(--border-subtle);
 }
 
@@ -665,32 +681,32 @@ p {
 
 .essay-stats__value {
   font-family: var(--font-serif);
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 400;
   letter-spacing: -0.02em;
   line-height: 1;
-  color: var(--accent-primary);
+  color: var(--text-primary);
   display: block;
   margin-bottom: var(--space-8);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 .essay-stats__label {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-primary);
+  letter-spacing: 0.16em;
+  color: var(--text-tertiary);
   line-height: 1;
 }
 
 .essay-stats__desc {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-tertiary);
-  margin-top: var(--space-8);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin-top: var(--space-16);
 }
 
 @media (max-width: 680px) {
@@ -735,8 +751,9 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--font-mono);
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
   color: var(--accent-primary);
   text-decoration: none;
   padding-bottom: 4px;

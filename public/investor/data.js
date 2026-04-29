@@ -8,6 +8,15 @@ window.PORTFOLIO = {
   fundName: 'ether.fi Ventures Fund I LP',
   asOfISO: new Date().toISOString().slice(0, 10),
 
+  // Fund-level data feeding the LP summary metrics (Committed / Paid-In /
+  // NAV / Distributions / DPI / TVPI). Paid-in capital is currently equal
+  // to invested capital — accrued management fees are not yet modeled.
+  fundLevel: {
+    committedCapital: 20_000_000,
+    vintageISO: '2025-06-01',
+    distributions: 0,
+  },
+
   // Live token price sources. Fallbacks used if CoinGecko is unreachable.
   priceSources: {
     RESOLV: { coingeckoId: 'resolv',   fallback: 0.039 },
@@ -18,7 +27,7 @@ window.PORTFOLIO = {
     {
       id: 'hyperbeat',
       company: 'Hyperbeat',
-      subtitle: 'Hyperliquid ecosystem · beHYPE LST',
+      subtitle: 'Hyperliquid-native neobank',
       position: 'Seed',
       status: 'Pre-TGE',
       tokenLive: false,
@@ -46,7 +55,7 @@ window.PORTFOLIO = {
     {
       id: 'rise',
       company: 'Rise Chain',
-      subtitle: 'Surge Labs · L1 infrastructure',
+      subtitle: 'On-chain exchange and EVM L2',
       position: 'Seed',
       status: 'Pre-TGE',
       tokenLive: false,
@@ -71,7 +80,7 @@ window.PORTFOLIO = {
     {
       id: 'resolv',
       company: 'Resolv',
-      subtitle: 'Synthetic USD / yield-bearing stablecoin',
+      subtitle: 'Yield-bearing stablecoin',
       position: 'Seed',
       status: 'Live — in lock-up',
       tokenLive: true,

@@ -9,12 +9,47 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="./styles.css" />
   <script>
+    // Remap Tailwind's default palette to ether.fi's institutional tokens so
+    // every `bg-slate-*`, `text-sky-*`, `text-emerald-*` etc. on this page
+    // resolves to the same dark-purple/cream palette used by the main site.
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+            sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+            serif: ['Georgia', 'serif'],
+          },
+          // BlackRock-style institutional palette. Scale inverted so the
+          // existing utilities work: 950 = pure white page, 50 = near-black
+          // masthead. Cool neutral greys throughout; no warm cream.
+          colors: {
+            slate: {
+              50:  '#0A0A0A',
+              100: '#171717',
+              200: '#262626',
+              300: '#404040',
+              400: '#525252',
+              500: '#737373',
+              600: '#A3A3A3',
+              700: '#D4D4D4',
+              800: '#E5E5E5',
+              900: '#F5F5F5',
+              950: '#FFFFFF',
+            },
+            sky: {
+              300: '#1E4E9E',
+              400: '#00338D',  /* BlackRock-style institutional navy */
+              500: '#002869',
+            },
+            emerald: {
+              400: '#1B5E3F',
+              500: '#144B32',
+            },
+            red: {
+              400: '#8B3A2E',
+              500: '#6E2C22',
+            },
           },
         },
       },
@@ -22,7 +57,7 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -33,16 +68,17 @@
           <span aria-hidden="true">←</span>
           <span>ether.fi Ventures</span>
         </a>
-        <div class="text-xs uppercase tracking-[0.18em] text-sky-400 font-semibold mb-2">ether.fi Ventures · Fund I LP</div>
-        <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight">Portfolio Dashboard</h1>
-        <p class="text-slate-400 mt-2 text-sm">Live investment positions, vesting schedules, and marks.</p>
+        <div class="text-sm sm:text-base uppercase tracking-[0.16em] text-sky-400 font-semibold mb-3">ether.fi Ventures · Fund I LP</div>
+        <h1 class="text-3xl sm:text-4xl font-medium tracking-tight text-slate-50">Portfolio Dashboard</h1>
+        <p class="text-slate-400 mt-2 text-sm max-w-2xl">Live investment positions, vesting schedules, and marks. Headline figures are <strong class="font-semibold text-slate-200">discounted</strong> (post-DLOM, conservative basis); <strong class="font-semibold text-slate-200">non-discounted</strong> figures shown alongside for context.</p>
       </div>
       <div class="text-sm text-slate-400 flex flex-col sm:items-end gap-1">
-        <div>As of <span id="as-of-date" class="text-slate-200 font-medium"></span></div>
+        <div class="whitespace-nowrap">As of <span id="as-of-date" class="text-slate-200 font-medium"></span></div>
       </div>
     </header>
 
-    <section id="summary" class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-10"></section>
+    <section id="summary-capital" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3"></section>
+    <section id="summary-multiples" class="grid grid-cols-3 gap-3 sm:gap-4 mb-10"></section>
 
     <section class="mb-10">
       <div class="mb-4">
@@ -85,8 +121,8 @@
             </div>
           </div>
           <p><strong class="text-slate-300">Strategic allocations</strong>: where a strategic token grant accompanies a cash investment (Hyperbeat, ETHGas), the tranches are reported as a single "Investment" line. Cash deployed reflects only the paid portion; token and equity percentages aggregate paid + granted. MOIC captures total cash-on-cash return inclusive of the strategic grant.</p>
-          <p><strong class="text-slate-300">Entry FDV</strong>: for strategic positions, this is a blended FDV — cash deployed ÷ combined token allocation — reflecting the effective entry price across paid + granted tranches. For non-strategic positions, Entry FDV equals the round FDV. For pure-equity positions, Entry FDV equals the round equity FDV.</p>
-          <p><strong class="text-slate-300">Current FDV</strong>: live token FDV where a token trades publicly (price × total supply), otherwise the most recent round valuation.</p>
+          <p><strong class="text-slate-300">Entry Val</strong>: for strategic positions, this is a blended valuation — cash deployed ÷ combined token allocation — reflecting the effective entry price across paid + granted tranches. For non-strategic positions, Entry Val equals the round valuation. For pure-equity positions, Entry Val equals the round equity valuation.</p>
+          <p><strong class="text-slate-300">Current Val</strong>: live token valuation where a token trades publicly (price × total supply), otherwise the most recent round valuation.</p>
           <p><strong class="text-slate-300">Exceptions</strong>: for any position where trading volume is thin relative to the Fund's holding, or where protocol-specific, regulatory, or concentration risks are not captured by the tiered table, additional judgment is applied and documented in a per-position fair value memo.</p>
           <p><strong class="text-slate-300">Vesting</strong>: computed from each position's contractual schedule against today's date. Charts show cumulative percent unlocked from TGE/effective date through full unlock.</p>
           <p><strong class="text-slate-300">Prices</strong>: fetched live from CoinGecko on page load. If the API is unavailable, last-known prices are used.</p>
@@ -96,6 +132,7 @@
 
     <footer class="mt-10 pt-6 border-t border-slate-800 text-xs text-slate-500 leading-relaxed">
       <p class="mb-2">Confidential — prepared for limited partners of ether.fi Ventures Fund I LP. Not for redistribution.</p>
+      <p class="mb-2">NAV figures shown are internal estimates calculated per the Fund's valuation policy (ASC 820 method, with tiered DLOM on locked tokens). They are <em class="not-italic font-semibold text-slate-300">not</em> the Fund's official audited Net Asset Value, which is determined by the Fund's administrator and auditor on a quarterly basis.</p>
       <p>This dashboard is informational and does not constitute an offer to sell or a solicitation to buy securities. Token prices reflect public market data and may not represent realizable value due to lock-ups, liquidity, or other restrictions.</p>
     </footer>
 

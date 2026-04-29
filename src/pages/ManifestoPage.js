@@ -22,7 +22,7 @@ export default function ManifestoPage() {
             Stablecoins have become one of the fastest-growing payment rails in history. Tokenized treasuries went from zero to tens of billions in twenty-four months. Onchain perpetuals are compounding against their centralized competitors every quarter. Regulatory clarity in the US and Europe has closed the overhang that kept a decade of institutional capital on the sidelines.
           </p>
           <p>
-            The next decade of financial services, consumer fintech, and market structure will be rebuilt onchain — and most of the winners haven't been founded yet.
+            The next decade of financial services, consumer software, infrastructure, and AI will be rebuilt onchain — and most of the winners haven't been founded yet.
           </p>
 
           <p className="essay-pullquote">We exist to back them.</p>
@@ -67,7 +67,7 @@ export default function ManifestoPage() {
 
           <h2>How we invest</h2>
           <p>
-            We lead, co-lead, and follow pre-seed through Series A across the Ethereum and DeFi ecosystem. We invest on fundamentals, not strategic fit. We write first checks, take real positions, and don't spray.
+            We lead, co-lead, and follow pre-seed through Series A across crypto — chain-agnostic, sector-agnostic. We invest on fundamentals, not strategic fit. We write first checks, take real positions, and don't spray.
           </p>
 
           <h2>What we promise</h2>
@@ -82,7 +82,7 @@ export default function ManifestoPage() {
           <div className="essay-cta">
             <div className="essay-cta__headline">Send us your deck. We'll read it tonight.</div>
             <div className="essay-cta__sub">
-              First check to Series A. Ethereum &amp; DeFi. Distribution-first.
+              First check to Series A. Chain-agnostic. Distribution-first.
             </div>
             <a href="mailto:ventures@ether.fi" className="essay-cta__link">
               ventures@ether.fi
