@@ -70,9 +70,16 @@ export default function NavBar({ page, go, scrolled }) {
           {navLink("Portfolio", "portfolio")}
           {navLink("Team", "team")}
           {navLink("News", "news")}
-          <a href="/investor/" className="btn-ghost" style={{ marginLeft: 8 }}>
+          <button
+            type="button"
+            className="btn-ghost btn-ghost-disabled"
+            data-tooltip="Coming Soon"
+            disabled
+            aria-disabled="true"
+            style={{ marginLeft: 8 }}
+          >
             Investors
-          </a>
+          </button>
         </div>
       </div>
     </nav>
