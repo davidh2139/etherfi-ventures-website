@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.1](https://github.com/etherfi-protocol/ventures-website/compare/v0.2.0...v0.2.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* redirect /investor/* to home until LP gating is ready ([799d52a](https://github.com/etherfi-protocol/ventures-website/commit/799d52aa63a9630a762623702eb7da9765cc400e))
+* redirect /investor/* to home until LP gating is ready ([#4](https://github.com/etherfi-protocol/ventures-website/issues/4)) ([adb722f](https://github.com/etherfi-protocol/ventures-website/commit/adb722f8f3934bc48e1ec32279baea94f03957ca))
+
+
+### Miscellaneous
+
+* **brand:** adopt ether.fi corp favicon set ([5ce93bd](https://github.com/etherfi-protocol/ventures-website/commit/5ce93bd4a4cd10ca7fb8ad0b3205ea73d50be91b))
+* **brand:** adopt ether.fi corp favicon set ([#5](https://github.com/etherfi-protocol/ventures-website/issues/5)) ([4d35bcd](https://github.com/etherfi-protocol/ventures-website/commit/4d35bcda7c78ae18da6826a887ff41fcf439dee4))
+
 ## [0.2.0](https://github.com/etherfi-protocol/ventures-website/compare/v0.1.0...v0.2.0) (2026-05-05)
 
 
