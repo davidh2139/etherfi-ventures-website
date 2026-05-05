@@ -1,0 +1,298 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release-please:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_PRIVATE_KEY }}
+
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          target-branch: main
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  enrich-and-notify:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ needs.release-please.outputs.tag_name }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout main with full history
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Get release body and url
+        id: release
+        run: |
+          URL=$(gh release view "$TAG" --json url --jq '.url')
+          BODY=$(gh release view "$TAG" --json body --jq '.body')
+
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          {
+            echo "body<<RELEASE_EOF"
+            echo "$BODY"
+            echo "RELEASE_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Find previous tag
+        id: prev-tag
+        run: |
+          # The just-created tag points at a commit on main. The most recent tag
+          # reachable from that commit's parent is the previous release.
+          PREV_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
+          echo "tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          echo "Previous tag: $PREV_TAG"
+
+      - name: Extract contributors
+        id: contributors
+        env:
+          PREV_TAG: ${{ steps.prev-tag.outputs.tag }}
+        run: |
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="$TAG"
+          else
+            RANGE="${PREV_TAG}..${TAG}"
+          fi
+
+          # Map commit authors to GitHub handles, excluding merge commits
+          HANDLES=""
+          while IFS= read -r sha; do
+            HANDLE=$(gh api "repos/$REPO/commits/${sha}" --jq '.author.login // empty' 2>/dev/null || true)
+            if [ -n "$HANDLE" ]; then
+              HANDLES="$HANDLES $HANDLE"
+            fi
+          done < <(git log --no-merges "$RANGE" --format='%H')
+
+          # Deduplicate, filter out bots, and format
+          UNIQUE_HANDLES=$(echo "$HANDLES" | tr ' ' '\n' | sort -u | sed '/^$/d' | sed '/\[bot\]$/d' | sed 's/^/@/' | tr '\n' ', ' | sed 's/,$//' | sed 's/,/, /g')
+
+          echo "contributors=$UNIQUE_HANDLES" >> "$GITHUB_OUTPUT"
+          echo "Contributors: $UNIQUE_HANDLES"
+
+      - name: Generate AI summary
+        id: ai-summary
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          RELEASE_BODY: ${{ steps.release.outputs.body }}
+        run: |
+          MODEL="${OPENROUTER_MODEL:-deepseek/deepseek-v3.2}"
+
+          if [ -z "$RELEASE_BODY" ]; then
+            echo "summary=" >> "$GITHUB_OUTPUT"
+            echo "No release body found, skipping AI summary"
+            exit 0
+          fi
+
+          PAYLOAD=$(jq -n \
+            --arg model "$MODEL" \
+            --arg changelog "$RELEASE_BODY" \
+            '{
+              model: $model,
+              messages: [
+                {
+                  role: "system",
+                  content: "You summarize software release changelogs. Output ONLY the summary text — no labels, no markdown formatting, no quotes. Write 2-3 concise plain-English sentences describing what changed and why it matters. Focus on user-facing impact."
+                },
+                {
+                  role: "user",
+                  content: ("Summarize this changelog:\n\n" + $changelog)
+                }
+              ],
+              max_tokens: 256,
+              temperature: 0.3
+            }')
+
+          RESPONSE=$(curl -s --max-time 30 -w "\n%{http_code}" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+            -d "$PAYLOAD" \
+            "https://openrouter.ai/api/v1/chat/completions" 2>/dev/null || echo -e "\n000")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" = "000" ]; then
+            echo "::warning::OpenRouter API request failed (network/timeout) — skipping AI summary"
+            echo "summary=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::OpenRouter API returned $HTTP_CODE — skipping AI summary"
+            echo "$BODY" | head -5
+            echo "summary=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SUMMARY=$(echo "$BODY" | jq -r '.choices[0].message.content // empty')
+
+          if [ -z "$SUMMARY" ]; then
+            echo "::warning::OpenRouter returned empty summary — skipping"
+            echo "summary=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "summary<<SUMMARY_EOF" >> "$GITHUB_OUTPUT"
+          echo "$SUMMARY" >> "$GITHUB_OUTPUT"
+          echo "SUMMARY_EOF" >> "$GITHUB_OUTPUT"
+          echo "AI Summary: $SUMMARY"
+
+      - name: Build enriched release body
+        env:
+          RELEASE_BODY: ${{ steps.release.outputs.body }}
+          SUMMARY: ${{ steps.ai-summary.outputs.summary }}
+          CONTRIBUTORS: ${{ steps.contributors.outputs.contributors }}
+        run: |
+          echo "$RELEASE_BODY" > /tmp/release-body.txt
+
+          if [ -z "$SUMMARY" ] && [ -z "$CONTRIBUTORS" ]; then
+            cp /tmp/release-body.txt /tmp/enriched-body.txt
+          else
+            {
+              echo "<!-- enrichment-start -->"
+              if [ -n "$SUMMARY" ]; then
+                echo ""
+                echo "### AI Summary"
+                echo ""
+                echo "${SUMMARY}"
+              fi
+              if [ -n "$CONTRIBUTORS" ]; then
+                echo ""
+                echo "### Contributors"
+                echo ""
+                echo "${CONTRIBUTORS}"
+              fi
+              echo "<!-- enrichment-end -->"
+            } > /tmp/enrichment-block.txt
+
+            # Insert the enrichment block after the first "## [version]" header.
+            # If no header is found (defensive), prepend it instead.
+            awk -v block_file="/tmp/enrichment-block.txt" '
+              /^## \[/ && !done {
+                print
+                print ""
+                while ((getline line < block_file) > 0) print line
+                done=1
+                next
+              }
+              { print }
+              END {
+                if (!done) {
+                  while ((getline line < block_file) > 0) print line
+                }
+              }
+            ' /tmp/release-body.txt > /tmp/enriched-body.txt
+          fi
+
+          echo "Wrote enriched body ($(wc -c < /tmp/enriched-body.txt) bytes)"
+
+      - name: Update GitHub release body
+        run: |
+          gh release edit "$TAG" --notes-file /tmp/enriched-body.txt
+
+      - name: Build Discord message
+        env:
+          RELEASE_NAME: ${{ env.TAG }}
+          CHAMPION_GH: ${{ github.actor }}
+        run: |
+          BODY=$(cat /tmp/enriched-body.txt)
+
+          # Map GitHub handles to Discord usernames in the body
+          # Values that are all digits are Discord user IDs → use <@ID> ping format
+          # Other values are usernames → use @username display format
+          # Use \b word boundary to prevent partial handle matches
+          while IFS= read -r line; do
+            GH_HANDLE=$(echo "$line" | jq -r '.key')
+            DISCORD_USER=$(echo "$line" | jq -r '.value')
+            if [[ "$DISCORD_USER" =~ ^[0-9]+$ ]]; then
+              BODY=$(echo "$BODY" | sed "s/@${GH_HANDLE}\b/<@${DISCORD_USER}>/g")
+            else
+              BODY=$(echo "$BODY" | sed "s/@${GH_HANDLE}\b/@${DISCORD_USER}/g")
+            fi
+          done < <(jq -r 'to_entries[] | @json' .github/discord-users.json)
+
+          # Map the champion's GitHub handle to Discord mention
+          CHAMPION_DISCORD=$(jq -r --arg gh "$CHAMPION_GH" '.[$gh] // $gh' .github/discord-users.json)
+          if [[ "$CHAMPION_DISCORD" =~ ^[0-9]+$ ]]; then
+            CHAMPION_MENTION="<@${CHAMPION_DISCORD}>"
+          else
+            CHAMPION_MENTION="@${CHAMPION_DISCORD}"
+          fi
+          CHAMPION_LINE="🏆 **Release Champion:** ${CHAMPION_MENTION}"
+
+          # Strip release-please footer, HTML comments, and Cursor Bugbot summary
+          BODY=$(echo "$BODY" | sed '/<!-- CURSOR_SUMMARY -->/,$d' | sed '/^---$/,$d' | sed '/<!--.*-->/d')
+
+          # Insert champion after version header, truncate to Discord's 2000 char limit.
+          # If the header isn't found (empty body), append the champion line.
+          echo "$BODY" | awk -v champ="$CHAMPION_LINE" '
+            /^## \[/ && !done {
+              print
+              print ""
+              print champ
+              done=1
+              next
+            }
+            { print }
+            END { if (!done) { print ""; print champ } }
+          ' | head -c 1800 > /tmp/discord-body.txt
+
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL }}
+          RELEASE_NAME: ${{ env.TAG }}
+          RELEASE_URL: ${{ steps.release.outputs.url }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          BODY=$(cat /tmp/discord-body.txt)
+
+          PAYLOAD=$(jq -n \
+            --arg title "🚀 $REPO_NAME $RELEASE_NAME" \
+            --arg url "$RELEASE_URL" \
+            --arg body "$BODY" \
+            '{
+              embeds: [{
+                title: $title,
+                url: $url,
+                description: $body,
+                color: 5814783
+              }]
+            }')
+
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "$DISCORD_WEBHOOK_URL")
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::warning::Discord webhook returned HTTP $HTTP_CODE"
+          else
+            echo "Discord notification sent successfully"
+          fi
