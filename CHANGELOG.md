@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/etherfi-protocol/ventures-website/compare/v0.2.1...v0.2.2) (2026-05-05)
+
+
+### Bug Fixes
+
+* redirect bare /investor/ trailing-slash variant ([df097d4](https://github.com/etherfi-protocol/ventures-website/commit/df097d4ebdacef1debe5834d5a19aa3c9d031206))
+* redirect bare /investor/ trailing-slash variant ([#7](https://github.com/etherfi-protocol/ventures-website/issues/7)) ([d84f687](https://github.com/etherfi-protocol/ventures-website/commit/d84f687b85d5966a592f7f7d54edcbeff7016074))
+
 ## [0.2.1](https://github.com/etherfi-protocol/ventures-website/compare/v0.2.0...v0.2.1) (2026-05-05)
 
 
