@@ -7,6 +7,11 @@
       "permanent": false
     },
     {
+      "source": "/investor/",
+      "destination": "/",
+      "permanent": false
+    },
+    {
       "source": "/investor/:path*",
       "destination": "/",
       "permanent": false
