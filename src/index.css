@@ -265,6 +265,33 @@ p {
   cursor: not-allowed;
 }
 
+/* Disabled ghost button with a hover tooltip — used for "Coming Soon"
+   CTAs. The tooltip text is read from the data-tooltip attribute and
+   rendered as a ::after pseudo-element on hover. No JS, no library. */
+.btn-ghost-disabled {
+  position: relative;
+}
+
+.btn-ghost-disabled[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 200;
+}
+
 /* Nav links — institutional sans, muted by default, primary on active.
    Class is applied to a <button> for keyboard accessibility, so we
    reset the browser default chrome. */
