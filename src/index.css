@@ -265,11 +265,13 @@ p {
   cursor: not-allowed;
 }
 
-/* Disabled ghost button with a hover tooltip — used for "Coming Soon"
-   CTAs. The tooltip text is read from the data-tooltip attribute and
-   rendered as a ::after pseudo-element on hover. No JS, no library. */
+/* Hover tooltip — applied to a wrapping element (typically a <span>
+   around a disabled <button>, since Firefox/Safari don't dispatch
+   :hover on disabled buttons). Tooltip text reads from the
+   data-tooltip attribute via a ::after pseudo-element. No JS. */
 .btn-ghost-disabled {
   position: relative;
+  display: inline-flex;
 }
 
 .btn-ghost-disabled[data-tooltip]:hover::after {
@@ -286,7 +288,7 @@ p {
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.2;
   white-space: nowrap;
   pointer-events: none;
   z-index: 200;

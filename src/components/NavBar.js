@@ -70,16 +70,19 @@ export default function NavBar({ page, go, scrolled }) {
           {navLink("Portfolio", "portfolio")}
           {navLink("Team", "team")}
           {navLink("News", "news")}
-          <button
-            type="button"
-            className="btn-ghost btn-ghost-disabled"
+          {/* Wrap the disabled button so :hover fires for the tooltip in
+              Firefox/Safari (those browsers do not dispatch hover events
+              on natively-disabled buttons). The wrapper carries the
+              data-tooltip; the button keeps the disabled semantics. */}
+          <span
+            className="btn-ghost-disabled"
             data-tooltip="Coming Soon"
-            disabled
-            aria-disabled="true"
             style={{ marginLeft: 8 }}
           >
-            Investors
-          </button>
+            <button type="button" className="btn-ghost" disabled>
+              Investors
+            </button>
+          </span>
         </div>
       </div>
     </nav>
