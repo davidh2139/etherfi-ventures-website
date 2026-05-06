@@ -115,3 +115,23 @@ thead th {
 canvas {
   image-rendering: -webkit-optimize-contrast;
 }
+
+@media (max-width: 640px) {
+  body {
+    font-size: 14.5px;
+  }
+
+  table {
+    min-width: 760px;
+  }
+
+  table th,
+  table td {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  [id^="summary-"] > div > div:nth-child(3) {
+    white-space: normal;
+  }
+}

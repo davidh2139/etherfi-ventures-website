@@ -1,22 +1,42 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import SvgLogo from "./SvgLogo";
 import { etherfiNavUrl } from "../config/logos";
 import { TOKENS } from "../config/theme";
 
-/**
- * NavBar — fixed at the top, transparent over the hero, resolves to
- * --bg-elevated with a hairline bottom border once the page has
- * scrolled. Height 72. Wordmark left, links center-right, one ghost
- * CTA on the far right.
- */
+const NAV_ITEMS = [
+  ["Home", "home"],
+  ["Manifesto", "manifesto"],
+  ["Portfolio", "portfolio"],
+  ["Team", "team"],
+  ["News", "news"],
+];
+
 export default function NavBar({ page, go, scrolled }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const handler = (e) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [menuOpen]);
+
+  const handleGo = (key) => {
+    setMenuOpen(false);
+    go(key);
+  };
+
   const navLink = (label, key) => (
     <button
       key={key}
       type="button"
       className="nav-item"
       data-active={page === key}
-      onClick={() => go(key)}
+      onClick={() => handleGo(key)}
     >
       {label}
     </button>
@@ -24,55 +44,56 @@ export default function NavBar({ page, go, scrolled }) {
 
   return (
     <nav
+      className="site-nav"
+      data-menu-open={menuOpen}
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        height: 88,
-        background: scrolled ? TOKENS.bg.elevated : "transparent",
-        borderBottom: `1px solid ${scrolled ? TOKENS.border.subtle : "transparent"}`,
+        background: scrolled || menuOpen ? TOKENS.bg.elevated : "transparent",
+        borderBottom: `1px solid ${scrolled || menuOpen ? TOKENS.border.subtle : "transparent"}`,
         transition: `background ${TOKENS.motion.base}, border-color ${TOKENS.motion.base}`,
       }}
     >
-      <div
-        style={{
-          maxWidth: "var(--content-max)",
-          margin: "0 auto",
-          paddingLeft: "var(--gutter)",
-          paddingRight: "var(--gutter)",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          boxSizing: "border-box",
-        }}
-      >
-        {/* Wordmark */}
-        <span
-          onClick={() => go("home")}
-          style={{
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            flexShrink: 0,
-            lineHeight: 0,
-          }}
+      <div className="site-nav__inner">
+        <button
+          type="button"
+          className="site-nav__brand"
+          onClick={() => handleGo("home")}
+          aria-label="ether.fi Ventures home"
         >
-          <SvgLogo url={etherfiNavUrl} width="347px" height="57px" />
-        </span>
+          <SvgLogo
+            url={etherfiNavUrl}
+            width="clamp(172px, 30vw, 300px)"
+            height="48px"
+          />
+        </button>
 
-        {/* Nav + CTA */}
-        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          {navLink("Home", "home")}
-          {navLink("Manifesto", "manifesto")}
-          {navLink("Portfolio", "portfolio")}
-          {navLink("Team", "team")}
-          {navLink("News", "news")}
-          <a href="/investor/" className="btn-ghost" style={{ marginLeft: 8 }}>
-            Investors
-          </a>
+        <button
+          type="button"
+          className="site-nav__toggle"
+          aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+          aria-controls="site-nav-links"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
+        </button>
+
+        <div id="site-nav-links" className="site-nav__links">
+          {NAV_ITEMS.map(([label, key]) => navLink(label, key))}
+          <div
+            className="site-nav__investor-cta"
+            aria-label="Investors coming soon"
+          >
+            <button
+              type="button"
+              className="site-nav__investors"
+              aria-disabled="true"
+            >
+              Investors
+            </button>
+            <span className="site-nav__coming-soon">Coming Soon</span>
+          </div>
         </div>
       </div>
     </nav>

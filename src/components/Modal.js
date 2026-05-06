@@ -44,7 +44,7 @@ export default function Modal({ d, onClose }) {
             fontSize: 20,
             fontWeight: 400,
             lineHeight: 1.5,
-            letterSpacing: "-0.01em",
+            letterSpacing: 0,
             color: TOKENS.text.primary,
             margin: "0 0 var(--space-48)",
           }}

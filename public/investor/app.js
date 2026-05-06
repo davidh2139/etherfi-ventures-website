@@ -349,7 +349,7 @@
     const renderCards = (cards) => cards.map(c => `
       <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
         <div class="text-xs uppercase tracking-wider text-slate-500 mb-2">${c.label}</div>
-        <div class="text-2xl font-semibold tracking-tight ${c.positive === true ? 'text-emerald-400' : c.positive === false ? 'text-red-400' : 'text-slate-100'}">${c.value}</div>
+        <div class="text-2xl font-semibold tracking-normal ${c.positive === true ? 'text-emerald-400' : c.positive === false ? 'text-red-400' : 'text-slate-100'}">${c.value}</div>
         ${c.secondary ? `<div class="text-xs text-slate-500 mt-1.5 font-mono">${c.secondary}</div>` : ''}
         <div class="text-xs text-slate-500 mt-2 leading-relaxed">${c.sub}</div>
       </div>
@@ -497,7 +497,7 @@
         <article class="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
           <div class="p-6 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h3 class="text-2xl font-semibold tracking-tight text-slate-100">${company}</h3>
+              <h3 class="text-2xl font-semibold tracking-normal text-slate-100">${company}</h3>
               <p class="text-sm text-slate-400 mt-1">${subtitle}</p>
             </div>
             <div class="flex flex-wrap gap-6 text-right">
