@@ -49,26 +49,17 @@ export default function App() {
 
         {/* ── FOOTER ── */}
         <footer
+          className="site-footer"
           style={{
             borderTop: `1px solid ${TOKENS.border.subtle}`,
-            padding: "16px 0",
             background: TOKENS.bg.primary,
           }}
         >
-          <div
-            style={{
-              maxWidth: 1140,
-              margin: "0 auto",
-              padding: "0 40px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+          <div className="site-footer__inner">
             <span style={{ fontSize: 10, color: TOKENS.text.primary }}>
               2026 ether.fi Ventures
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div className="site-footer__links">
               <a
                 href="mailto:ventures@ether.fi"
                 style={{ fontSize: 11, color: TOKENS.text.primary, textDecoration: "none" }}

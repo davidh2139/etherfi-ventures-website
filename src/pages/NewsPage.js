@@ -82,7 +82,7 @@ export default function NewsPage() {
                   fontSize: 20,
                   fontWeight: 400,
                   lineHeight: 1.3,
-                  letterSpacing: "-0.01em",
+                  letterSpacing: 0,
                   color: TOKENS.text.primary,
                 }}
               >

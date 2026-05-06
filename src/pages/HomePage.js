@@ -31,9 +31,9 @@ export default function HomePage() {
         <div className="hero__atmosphere" aria-hidden="true" />
         <div className="container hero__content">
           <h1 className="display-hero hero__title">
-            A crypto-native venture<br />
-            firm built by founders,<br />
-            for founders.
+            <span className="hero__title-line">A crypto-native venture</span>
+            <span className="hero__title-line">firm built by founders,</span>
+            <span className="hero__title-line">for founders.</span>
           </h1>
           <p className="hero__kicker">
             Backing exceptional founders building the future of crypto, alongside one of the industry's largest operating platforms.
