@@ -10,7 +10,15 @@ new Function('window', dataSrc.replace('window.PORTFOLIO', 'window.PORTFOLIO'))(
 const P = sandbox.window.PORTFOLIO;
 
 const today = new Date();
-const todayISO = today.toISOString().slice(0, 10);
+const todayISO = P.asOfISO || toLocalISODate(today);
+
+function toLocalISODate(date) {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
+function parseISODateParts(iso) {
+  return iso.split('-').map(Number);
+}
 
 // formatters
 const fmtUSD = (v, opts = {}) => {
@@ -25,9 +33,10 @@ const fmtPct = (v, d = 2) => v == null ? '—' : (v * 100).toFixed(d) + '%';
 const fmtMultiple = v => v == null ? '—' : v.toFixed(2) + 'x';
 
 function monthsBetween(a, b) {
-  const s = new Date(a), e = new Date(b);
-  let m = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
-  if (e.getDate() < s.getDate()) m -= 1;
+  const [sy, sm, sd] = parseISODateParts(a);
+  const [ey, em, ed] = parseISODateParts(b);
+  let m = (ey - sy) * 12 + (em - sm);
+  if (ed < sd) m -= 1;
   return m;
 }
 function vestedFraction(v, asOf) {
@@ -62,49 +71,63 @@ function weightedDLOM(v, asOf) {
   return w > 0 ? s / w : 0;
 }
 
+function hasTokenValuation(pos) {
+  return pos.tokenPct != null
+    || pos.tokenCount != null
+    || pos.tokenSymbol != null
+    || pos.entryTokenFDV != null;
+}
+
+function valuationOwnership(pos, usesTokenValuation) {
+  if (usesTokenValuation) {
+    if (pos.tokenPct != null) return pos.tokenPct;
+    if (pos.tokenCount != null && pos.totalSupply) return pos.tokenCount / pos.totalSupply;
+    return null;
+  }
+  return pos.equityPct ?? null;
+}
+
 function enrich(pos, prices) {
   const out = { ...pos, currentPrice: null, currentTokenFDV: null, currentTokenValue: null,
+    currentValuation: null, valuationBasis: null, valuationLabel: null, valuationOwnership: null,
     vestedFraction: 0, vestedTokens: 0, positionMark: null, markMultiple: null };
+  const usesTokenValuation = hasTokenValuation(pos);
+  out.valuationBasis = usesTokenValuation ? 'token' : 'equity';
+  out.valuationLabel = usesTokenValuation ? 'Token FDV' : 'Equity Valuation';
+  out.valuationOwnership = valuationOwnership(pos, usesTokenValuation);
+
   if (pos.tokenLive && pos.tokenSymbol && prices[pos.tokenSymbol]) {
     const price = prices[pos.tokenSymbol].usd;
     out.currentPrice = price;
     if (pos.totalSupply) out.currentTokenFDV = price * pos.totalSupply;
-    if (pos.tokenCount) out.currentTokenValue = price * pos.tokenCount;
   } else if (pos.currentFDV != null) {
     out.currentTokenFDV = pos.currentFDV;
-    if (!pos.pureEquity && pos.tokenPct != null) out.currentTokenValue = pos.currentFDV * pos.tokenPct;
+  }
+  out.currentValuation = usesTokenValuation
+    ? out.currentTokenFDV ?? pos.currentFDV ?? pos.entryTokenFDV ?? pos.equityFDV ?? null
+    : pos.currentFDV ?? pos.equityFDV ?? null;
+  if (usesTokenValuation && out.currentValuation != null && out.valuationOwnership != null) {
+    out.currentTokenValue = out.currentValuation * out.valuationOwnership;
   }
   if (pos.vesting) {
     out.vestedFraction = vestedFraction(pos.vesting, todayISO);
     if (pos.tokenCount) out.vestedTokens = pos.tokenCount * out.vestedFraction;
   }
-  if (pos.pureEquity) out.positionMark = pos.cashDeployed;
-  else if (pos.hasStrategicGrant) {
-    if (pos.cashDeployed === 0) out.positionMark = out.currentTokenValue || 0;
-    else if (!pos.hasEquity) out.positionMark = out.currentTokenValue != null ? out.currentTokenValue : pos.cashDeployed;
-    else out.positionMark = out.currentTokenValue != null ? pos.cashDeployed + out.currentTokenValue : pos.cashDeployed;
+  if (out.currentValuation != null && out.valuationOwnership != null) {
+    out.positionMark = out.currentValuation * out.valuationOwnership;
   } else {
-    const eFDV = pos.entryTokenFDV ?? pos.equityFDV;
-    const cFDV = out.currentTokenFDV;
-    out.positionMark = (eFDV && cFDV && pos.cashDeployed > 0) ? pos.cashDeployed * (cFDV / eFDV) : pos.cashDeployed;
+    out.positionMark = pos.cashDeployed;
   }
   if (pos.cashDeployed > 0 && out.positionMark != null) out.markMultiple = out.positionMark / pos.cashDeployed;
-  if (pos.pureEquity) {
-    const flat = pos.flatDiscount ?? 0;
-    out.weightedDLOM = flat;
-    out.discountedPositionMark = pos.cashDeployed * (1 - flat);
-  } else {
+  if (usesTokenValuation) {
     const dlom = weightedDLOM(pos.vesting, todayISO);
     out.weightedDLOM = dlom;
     const blended = (out.vestedFraction || 0) + (1 - (out.vestedFraction || 0)) * (1 - dlom);
-    if (pos.hasStrategicGrant) {
-      const dtv = out.currentTokenValue != null ? out.currentTokenValue * blended : null;
-      if (pos.cashDeployed === 0) out.discountedPositionMark = dtv || 0;
-      else if (!pos.hasEquity) out.discountedPositionMark = dtv != null ? dtv : pos.cashDeployed;
-      else out.discountedPositionMark = dtv != null ? pos.cashDeployed + dtv : pos.cashDeployed;
-    } else {
-      out.discountedPositionMark = (out.positionMark || 0) * blended;
-    }
+    out.discountedPositionMark = (out.positionMark || 0) * blended;
+  } else {
+    const flat = pos.flatDiscount ?? 0;
+    out.weightedDLOM = flat;
+    out.discountedPositionMark = (out.positionMark || 0) * (1 - flat);
   }
   if (pos.cashDeployed > 0 && out.discountedPositionMark != null) out.discountedMarkMultiple = out.discountedPositionMark / pos.cashDeployed;
   return out;
@@ -114,6 +137,7 @@ function enrich(pos, prices) {
   const ids = [...new Set(Object.values(P.priceSources).map(s => s.coingeckoId))].join(',');
   const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
   const prices = {};
+  let priceFetchNote = null;
   for (const [sym, src] of Object.entries(P.priceSources)) prices[sym] = { usd: src.fallback, stale: true };
   try {
     const res = await fetch(url);
@@ -121,12 +145,17 @@ function enrich(pos, prices) {
       const j = await res.json();
       for (const [sym, src] of Object.entries(P.priceSources))
         if (j[src.coingeckoId]?.usd != null) prices[sym] = { usd: j[src.coingeckoId].usd, stale: false };
+    } else {
+      priceFetchNote = `CoinGecko returned HTTP ${res.status}; using fallbacks where needed.`;
     }
-  } catch {}
+  } catch (err) {
+    priceFetchNote = `CoinGecko fetch failed (${err.message}); using fallbacks where needed.`;
+  }
 
   console.log('='.repeat(80));
   console.log(`AS OF: ${todayISO}`);
   console.log(`PRICES: ${Object.entries(prices).map(([s, p]) => `${s}=$${p.usd}${p.stale ? ' (FALLBACK)' : ''}`).join(', ')}`);
+  if (priceFetchNote) console.log(`PRICE SOURCE NOTE: ${priceFetchNote}`);
   console.log('='.repeat(80));
 
   const enriched = P.positions.map(p => enrich(p, prices));
@@ -164,7 +193,7 @@ function enrich(pos, prices) {
       p.company,
       p.position,
       fmtUSD(p.cashDeployed, { compact: true }),
-      fmtPct(p.tokenPct, 2),
+      fmtPct(p.valuationOwnership, 2),
       fmtUSD(p.positionMark, { compact: true }),
       fmtUSD(p.discountedPositionMark, { compact: true }),
       fmtMultiple(p.discountedMarkMultiple),
@@ -185,39 +214,42 @@ function enrich(pos, prices) {
   for (const p of enriched) {
     console.log(`\n[${p.company}] ${p.position} · ${p.status}`);
     console.log(`  Investment:       ${fmtUSD(p.cashDeployed)}`);
-    if (p.tokenPct != null) console.log(`  Ownership:        ${fmtPct(p.tokenPct, 2)}`);
-    if (!p.pureEquity && p.tokenCount != null) console.log(`  Tokens:           ${p.tokenCount.toLocaleString()} ${p.tokenSymbol || ''}`);
-    const eFDV = p.entryTokenFDV ?? p.equityFDV;
-    if (eFDV != null) console.log(`  Entry FDV:        ${fmtUSD(eFDV, { compact: true })}`);
+    if (p.valuationOwnership != null) console.log(`  Ownership:        ${fmtPct(p.valuationOwnership, 2)}`);
+    if (p.valuationBasis === 'token' && p.tokenCount != null) console.log(`  Tokens:           ${p.tokenCount.toLocaleString()} ${p.tokenSymbol || ''}`);
+    const eFDV = p.valuationBasis === 'token' ? p.entryTokenFDV ?? p.equityFDV : p.equityFDV ?? p.entryTokenFDV;
+    if (eFDV != null) console.log(`  ${p.valuationBasis === 'token' ? 'Entry FDV' : 'Entry Valuation'}:        ${fmtUSD(eFDV, { compact: true })}`);
     if (p.currentPrice != null) console.log(`  Current Price:    $${p.currentPrice.toFixed(p.currentPrice < 1 ? 4 : 2)} / ${p.tokenSymbol}`);
-    if (p.currentTokenFDV != null) console.log(`  Current FDV:      ${fmtUSD(p.currentTokenFDV, { compact: true })}`);
-    if (p.hasStrategicGrant && p.currentTokenValue != null) console.log(`  Token Mark:       ${fmtUSD(p.currentTokenValue, { compact: true })}`);
+    if (p.currentValuation != null) console.log(`  ${p.valuationLabel}:        ${fmtUSD(p.currentValuation, { compact: true })}`);
     if (p.positionMark != null && p.cashDeployed > 0) console.log(`  Non-Disc. Mark:   ${fmtUSD(p.positionMark, { compact: true })}`);
     if (p.markMultiple != null) console.log(`  Non-Disc. MOIC:   ${fmtMultiple(p.markMultiple)}`);
     if (p.discountedPositionMark != null && p.cashDeployed > 0) console.log(`  Disc. NAV (Est.): ${fmtUSD(p.discountedPositionMark, { compact: true })}`);
     if (p.discountedMarkMultiple != null) console.log(`  Disc. MOIC:       ${fmtMultiple(p.discountedMarkMultiple)}`);
-    if (p.hasEquity && p.equityPct != null) console.log(`  Equity:           ${fmtPct(p.equityPct, 2)} @ ${fmtUSD(p.equityFDV, { compact: true })}`);
+    if (p.valuationBasis === 'equity' && p.hasEquity && p.equityPct != null) console.log(`  Equity:           ${fmtPct(p.equityPct, 2)} @ ${fmtUSD(p.equityFDV, { compact: true })}`);
     console.log(`  Weighted DLOM:    ${(p.weightedDLOM * 100).toFixed(2)}%`);
     console.log(`  Vested Fraction:  ${(p.vestedFraction * 100).toFixed(2)}%`);
-    if (p.vesting && !p.pureEquity) {
+    if (p.vesting && p.valuationBasis === 'token') {
       const liquidVal = p.currentPrice != null ? p.vestedTokens * p.currentPrice : null;
       const lockedTokens = (p.tokenCount || 0) - p.vestedTokens;
       const lockedVal = p.currentPrice != null ? lockedTokens * p.currentPrice : null;
-      console.log(`  Vesting tiles:    Vested ${(p.vestedFraction*100).toFixed(1)}% · Locked ${((1-p.vestedFraction)*100).toFixed(1)}% · Liquid ${liquidVal != null ? fmtUSD(liquidVal, {compact:true}) : '—'} · Locked ${lockedVal != null ? fmtUSD(lockedVal, {compact:true}) : '—'}`);
+      console.log(`  Investment vesting tiles: Vested ${(p.vestedFraction*100).toFixed(1)}% · Locked ${((1-p.vestedFraction)*100).toFixed(1)}% · Liquid ${liquidVal != null ? fmtUSD(liquidVal, {compact:true}) : '—'} · Locked ${lockedVal != null ? fmtUSD(lockedVal, {compact:true}) : '—'}`);
     }
   }
 
   // Consistency checks
   console.log('\n--- CONSISTENCY CHECKS ---');
   for (const p of enriched) {
-    const eFDV = p.entryTokenFDV ?? p.equityFDV;
-    // For non-strategic, non-pure-equity: positionMark should equal cash×(currentFDV/entryFDV) AND equal currentTokenValue (if both defined)
-    if (!p.hasStrategicGrant && !p.pureEquity && eFDV && p.currentTokenFDV && p.tokenPct != null) {
-      const ratioMark = p.cashDeployed * (p.currentTokenFDV / eFDV);
-      const tokenValMark = p.currentTokenFDV * p.tokenPct;
-      const ratioOK = Math.abs(p.positionMark - ratioMark) < 1;
-      const dualOK = Math.abs(ratioMark - tokenValMark) / Math.max(ratioMark, 1) < 0.001;
-      console.log(`  [${p.company}] ratio≡cash×(cFDV/eFDV) ${ratioOK ? 'OK' : 'MISMATCH'} | ratio≡FDV×tokenPct ${dualOK ? 'OK' : 'MISMATCH'} (delta ${((ratioMark - tokenValMark) / ratioMark * 100).toFixed(3)}%)`);
-    }
+    const expected = p.currentValuation != null && p.valuationOwnership != null
+      ? p.currentValuation * p.valuationOwnership
+      : p.cashDeployed;
+    const ok = Math.abs((p.positionMark || 0) - expected) < 1;
+    console.log(`  [${p.company}] mark = ownership × ${p.valuationLabel || 'valuation'} ${ok ? 'OK' : 'MISMATCH'} (${fmtUSD(expected, { compact: true })})`);
+  }
+
+  console.log('\n--- FORMULA BASIS ---');
+  for (const p of enriched) {
+    const basis = p.valuationBasis === 'token'
+      ? 'token FDV'
+      : 'latest equity valuation';
+    console.log(`  [${p.company}] ${fmtPct(p.valuationOwnership, 4)} × ${fmtUSD(p.currentValuation, { compact: true })} ${basis} = ${fmtUSD(p.positionMark, { compact: true })}.`);
   }
 })();

@@ -1,7 +1,124 @@
 (() => {
   const P = window.PORTFOLIO;
   const today = new Date();
-  const todayISO = today.toISOString().slice(0, 10);
+  const todayISO = P.asOfISO || toLocalISODate(today);
+  const DISCLOSURE_KEY = 'etherfi-investor-disclosure-v1';
+
+  function toLocalISODate(date) {
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+  }
+
+  function parseISODateParts(iso) {
+    return iso.split('-').map(Number);
+  }
+
+  function parseISODateLocal(iso) {
+    const [year, month, day] = parseISODateParts(iso);
+    return new Date(year, month - 1, day);
+  }
+
+  function hasAcceptedDisclosure() {
+    try {
+      return sessionStorage.getItem(DISCLOSURE_KEY) === 'accepted';
+    } catch {
+      return false;
+    }
+  }
+
+  function rememberDisclosureAcceptance() {
+    try {
+      sessionStorage.setItem(DISCLOSURE_KEY, 'accepted');
+    } catch {
+      // Storage may be unavailable in strict privacy modes; the in-page
+      // acknowledgement should still unblock the current view.
+    }
+  }
+
+  function showDisclosureAgreement() {
+    if (hasAcceptedDisclosure()) return;
+
+    document.body.classList.add('disclosure-locked');
+    const dashboard = document.getElementById('dashboard-root');
+    if (dashboard) dashboard.setAttribute('aria-hidden', 'true');
+
+    const modal = document.createElement('div');
+    modal.className = 'disclosure-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'disclosure-title');
+    modal.innerHTML = `
+      <div class="disclosure-card">
+        <div class="disclosure-card__header">
+          <div class="disclosure-eyebrow">LP access only</div>
+          <h2 id="disclosure-title">Confidential LP Dashboard</h2>
+          <p>For current limited partners of ether.fi Ventures Fund I LP and ether.fi Ventures personnel only.</p>
+        </div>
+        <div class="disclosure-card__body">
+          <section class="disclosure-callout">
+            <div class="disclosure-section-label">Authorized audience</div>
+            <p>
+              Access is restricted to current limited partners of ether.fi Ventures Fund I LP, personnel of those limited partners who are authorized to act on their behalf, and ether.fi Ventures personnel. This dashboard is not intended for prospective investors, portfolio companies, press, outside advisers, service providers, or any other third party unless ether.fi Ventures has approved access in writing.
+            </p>
+          </section>
+          <div class="disclosure-terms">
+            <section>
+              <div class="disclosure-section-label">Confidential use</div>
+              <p>All portfolio data, marks, valuations, token holdings, fund metrics, assumptions, methodology, and related materials are confidential and proprietary. You may use them only for internal LP review or ether.fi Ventures business purposes.</p>
+            </section>
+            <section>
+              <div class="disclosure-section-label">No sharing</div>
+              <p>You may not copy, reproduce, screenshot, photograph, download, publish, post, forward, transmit, summarize, train systems on, or otherwise disclose any portion without prior written consent from ether.fi Ventures.</p>
+            </section>
+            <section>
+              <div class="disclosure-section-label">No offer or reliance</div>
+              <p>These materials are informational only and are not an offer, solicitation, investment advice, legal advice, tax advice, accounting advice, or a recommendation. Any fund interest may be offered only through definitive documents.</p>
+            </section>
+            <section>
+              <div class="disclosure-section-label">Unaudited estimates</div>
+              <p>Marks, NAV estimates, MOIC, TVPI, FDV, token prices, vesting information, and other metrics are internal estimates, may change without notice, and may differ materially from administrator, auditor, tax, or realized values.</p>
+            </section>
+          </div>
+          <p class="disclosure-warning">
+            If you are not a current limited partner, authorized personnel of a current limited partner, or ether.fi Ventures personnel, you must leave this page immediately and must not use or disclose anything you have seen.
+          </p>
+        </div>
+        <div class="disclosure-card__footer">
+          <label class="disclosure-checkbox">
+            <input id="disclosure-checkbox" type="checkbox" />
+            <span>I am a current limited partner, authorized personnel of a current limited partner, or ether.fi Ventures personnel, and I agree to the confidentiality and use restrictions above.</span>
+          </label>
+          <div class="disclosure-actions">
+            <button id="disclosure-decline" type="button" class="disclosure-button disclosure-button--secondary">Decline</button>
+            <button id="disclosure-accept" type="button" class="disclosure-button disclosure-button--primary" disabled>Acknowledge and Continue</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const checkbox = modal.querySelector('#disclosure-checkbox');
+    const accept = modal.querySelector('#disclosure-accept');
+    const decline = modal.querySelector('#disclosure-decline');
+
+    checkbox.addEventListener('change', () => {
+      accept.disabled = !checkbox.checked;
+    });
+
+    accept.addEventListener('click', () => {
+      if (!checkbox.checked) return;
+      rememberDisclosureAcceptance();
+      document.body.classList.remove('disclosure-locked');
+      if (dashboard) dashboard.removeAttribute('aria-hidden');
+      modal.remove();
+    });
+
+    decline.addEventListener('click', () => {
+      window.location.href = '/';
+    });
+
+    checkbox.focus();
+  }
 
   // ---------- Formatters ----------
   const fmtUSD = (v, opts = {}) => {
@@ -19,16 +136,17 @@
 
   const fmtDate = (iso) => {
     if (!iso) return '—';
-    const d = new Date(iso);
+    const d = parseISODateLocal(iso);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
   const fmtMonthShort = (d) => d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 
   // ---------- Vesting math ----------
   function monthsBetween(start, end) {
-    const s = new Date(start), e = new Date(end);
-    let m = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
-    if (e.getDate() < s.getDate()) m -= 1;
+    const [sy, sm, sd] = parseISODateParts(start);
+    const [ey, em, ed] = parseISODateParts(end);
+    let m = (ey - sy) * 12 + (em - sm);
+    if (ed < sd) m -= 1;
     return m;
   }
 
@@ -44,7 +162,7 @@
   function vestingSeries(vesting) {
     if (!vesting || !vesting.startDate) return null;
     const points = [];
-    const start = new Date(vesting.startDate);
+    const start = parseISODateLocal(vesting.startDate);
     for (let m = 0; m <= vesting.endMonths; m++) {
       const d = new Date(start);
       d.setMonth(d.getMonth() + m);
@@ -137,30 +255,57 @@
     return remaining / 12;
   }
 
+  function hasTokenValuation(pos) {
+    return pos.tokenPct != null
+      || pos.tokenCount != null
+      || pos.tokenSymbol != null
+      || pos.entryTokenFDV != null;
+  }
+
+  function valuationOwnership(pos, usesTokenValuation) {
+    if (usesTokenValuation) {
+      if (pos.tokenPct != null) return pos.tokenPct;
+      if (pos.tokenCount != null && pos.totalSupply) return pos.tokenCount / pos.totalSupply;
+      return null;
+    }
+    return pos.equityPct ?? null;
+  }
+
   // ---------- Position computations ----------
   function enrichPosition(pos, prices) {
     const out = { ...pos };
     out.currentPrice = null;
     out.currentTokenFDV = null;
     out.currentTokenValue = null;
+    out.currentValuation = null;
+    out.valuationBasis = null;
+    out.valuationLabel = null;
+    out.valuationOwnership = null;
     out.vestedFraction = 0;
     out.vestedTokens = 0;
     out.positionMark = null;
     out.markMultiple = null;
 
+    const usesTokenValuation = hasTokenValuation(pos);
+    out.valuationBasis = usesTokenValuation ? 'token' : 'equity';
+    out.valuationLabel = usesTokenValuation ? 'Token FDV' : 'Equity Valuation';
+    out.valuationOwnership = valuationOwnership(pos, usesTokenValuation);
+
     if (pos.tokenLive && pos.tokenSymbol && prices[pos.tokenSymbol]) {
       const price = prices[pos.tokenSymbol].usd;
       out.currentPrice = price;
       if (pos.totalSupply) out.currentTokenFDV = price * pos.totalSupply;
-      if (pos.tokenCount) out.currentTokenValue = price * pos.tokenCount;
     } else if (pos.currentFDV != null) {
-      // No live market; mark to the manually-set current FDV (e.g. last round).
+      // No live market; use the manually-set current FDV / latest round value.
       out.currentTokenFDV = pos.currentFDV;
-      // Pure-equity positions: cash represents the full pro-rata claim; no
-      // separate token value is added on top (would double-count).
-      if (!pos.pureEquity && pos.tokenPct != null) {
-        out.currentTokenValue = pos.currentFDV * pos.tokenPct;
-      }
+    }
+
+    out.currentValuation = usesTokenValuation
+      ? out.currentTokenFDV ?? pos.currentFDV ?? pos.entryTokenFDV ?? pos.equityFDV ?? null
+      : pos.currentFDV ?? pos.equityFDV ?? null;
+
+    if (usesTokenValuation && out.currentValuation != null && out.valuationOwnership != null) {
+      out.currentTokenValue = out.currentValuation * out.valuationOwnership;
     }
 
     if (pos.vesting) {
@@ -168,65 +313,22 @@
       if (pos.tokenCount) out.vestedTokens = pos.tokenCount * out.vestedFraction;
     }
 
-    // Position mark methodology — three regimes:
-    //
-    // (1) pureEquity: cash is the basis for a single pro-rata claim. Mark
-    //     equals cash when entry FDV == current FDV (e.g. Symbiotic).
-    //
-    // (2) hasStrategicGrant: cash is the *paid* basis; the strategic grant
-    //     adds tokens that cost nothing. Mark = cash (equity at cost) +
-    //     current token value (which captures paid + strategic tokens at
-    //     current price). This correctly surfaces the day-1 strategic bonus.
-    //
-    // (3) default (non-strategic, SAFE+warrant or SAFT): cash was the
-    //     combined basis for equity + token warrant. Adding token value on
-    //     top of cash would double-count (cash already paid for the warrant
-    //     at round). Instead mark by FDV ratio: cash × (currentFDV / entryFDV).
-    //     If tokens decline below round, mark correctly shows the loss.
-    if (pos.pureEquity) {
-      out.positionMark = pos.cashDeployed;
-    } else if (pos.hasStrategicGrant) {
-      if (pos.cashDeployed === 0) {
-        out.positionMark = out.currentTokenValue || 0;
-      } else if (!pos.hasEquity) {
-        out.positionMark = out.currentTokenValue != null ? out.currentTokenValue : pos.cashDeployed;
-      } else {
-        out.positionMark = out.currentTokenValue != null
-          ? pos.cashDeployed + out.currentTokenValue
-          : pos.cashDeployed;
-      }
+    // Position mark = ownership percentage * current valuation. Token FDV is
+    // used whenever a token allocation exists; equity valuation is the fallback.
+    if (out.currentValuation != null && out.valuationOwnership != null) {
+      out.positionMark = out.currentValuation * out.valuationOwnership;
     } else {
-      const entryFDV = pos.entryTokenFDV ?? pos.equityFDV;
-      const currentFDV = out.currentTokenFDV;
-      if (entryFDV && currentFDV && pos.cashDeployed > 0) {
-        out.positionMark = pos.cashDeployed * (currentFDV / entryFDV);
-      } else {
-        out.positionMark = pos.cashDeployed;
-      }
+      out.positionMark = pos.cashDeployed;
     }
 
     if (pos.cashDeployed > 0 && out.positionMark != null) {
       out.markMultiple = out.positionMark / pos.cashDeployed;
     }
 
-    // Illiquidity discount — three regimes matching the mark methodology:
-    //
-    // (1) pureEquity: flat haircut on the cash-based mark.
-    // (2) hasStrategicGrant: 30%/yr compounded on the locked token portion
-    //     only; equity (cash basis) is not further discounted.
-    // (3) default (ratio-marked): 30%/yr compounded on the whole mark, since
-    //     the mark itself is derived entirely from (locked) token FDV and
-    //     the cash is already spent — the only future realizable value is
-    //     the locked tokens unlocking at whatever price then prevails.
-    if (pos.pureEquity) {
-      // Pure-equity positions use a per-position flat haircut (exception to
-      // the standard DLOM table, which does not apply to equity under policy).
-      const flat = pos.flatDiscount ?? 0;
-      out.weightedDLOM = flat;
-      out.discountFactor = 1 - flat;
-      out.discountedTokenValue = null;
-      out.discountedPositionMark = pos.cashDeployed * (1 - flat);
-    } else {
+    // DLOM applies to token-derived marks with vesting/lock-up schedules.
+    // Equity-only marks are carried at latest round valuation unless a
+    // per-position flat discount is specified.
+    if (usesTokenValuation) {
       const dlom = weightedDLOM(pos.vesting, todayISO);
       const discountFactor = 1 - dlom;
       out.weightedDLOM = dlom;
@@ -234,30 +336,14 @@
       const vestedFrac = out.vestedFraction || 0;
       // Vested tokens are liquid (no DLOM); locked tokens get the weighted DLOM.
       const blendedFactor = vestedFrac + (1 - vestedFrac) * discountFactor;
-
-      if (pos.hasStrategicGrant) {
-        // Equity/cash held at cost is not further discounted; DLOM applies to
-        // the locked token portion only.
-        let discountedTokenValue = null;
-        if (out.currentTokenValue != null) {
-          discountedTokenValue = out.currentTokenValue * blendedFactor;
-        }
-        out.discountedTokenValue = discountedTokenValue;
-
-        if (pos.cashDeployed === 0) {
-          out.discountedPositionMark = discountedTokenValue || 0;
-        } else if (!pos.hasEquity) {
-          out.discountedPositionMark = discountedTokenValue != null ? discountedTokenValue : pos.cashDeployed;
-        } else {
-          out.discountedPositionMark = discountedTokenValue != null
-            ? pos.cashDeployed + discountedTokenValue
-            : pos.cashDeployed;
-        }
-      } else {
-        // Non-strategic: whole mark derives from locked token FDV, so DLOM
-        // applies to the entire mark.
-        out.discountedPositionMark = (out.positionMark || 0) * blendedFactor;
-      }
+      out.discountedTokenValue = out.currentTokenValue != null ? out.currentTokenValue * blendedFactor : null;
+      out.discountedPositionMark = (out.positionMark || 0) * blendedFactor;
+    } else {
+      const flat = pos.flatDiscount ?? 0;
+      out.weightedDLOM = flat;
+      out.discountFactor = 1 - flat;
+      out.discountedTokenValue = null;
+      out.discountedPositionMark = (out.positionMark || 0) * (1 - flat);
     }
 
     if (pos.cashDeployed > 0 && out.discountedPositionMark != null) {
@@ -347,11 +433,11 @@
     ];
 
     const renderCards = (cards) => cards.map(c => `
-      <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-        <div class="text-xs uppercase tracking-wider text-slate-500 mb-2">${c.label}</div>
-        <div class="text-2xl font-semibold tracking-normal ${c.positive === true ? 'text-emerald-400' : c.positive === false ? 'text-red-400' : 'text-slate-100'}">${c.value}</div>
-        ${c.secondary ? `<div class="text-xs text-slate-500 mt-1.5 font-mono">${c.secondary}</div>` : ''}
-        <div class="text-xs text-slate-500 mt-2 leading-relaxed">${c.sub}</div>
+      <div class="summary-card rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+        <div class="summary-card__label text-xs uppercase tracking-wider text-slate-500 mb-2">${c.label}</div>
+        <div class="summary-card__value text-2xl font-semibold tracking-normal ${c.positive === true ? 'text-emerald-400' : c.positive === false ? 'text-red-400' : 'text-slate-100'}">${c.value}</div>
+        ${c.secondary ? `<div class="summary-card__secondary text-xs text-slate-500 mt-1.5 font-mono">${c.secondary}</div>` : ''}
+        <div class="summary-card__sub text-xs text-slate-500 mt-2 leading-relaxed">${c.sub}</div>
       </div>
     `).join('');
 
@@ -376,7 +462,7 @@
     { key: 'company',                  label: 'Company',          align: 'left',  type: 'text',   accessor: p => p.company || '' },
     { key: 'position',                 label: 'Stage',            align: 'left',  type: 'text',   accessor: p => p.position || '' },
     { key: 'cashDeployed',             label: 'Investment',       align: 'right', type: 'number', accessor: p => p.cashDeployed || 0 },
-    { key: 'tokenPct',                 label: 'Ownership',        align: 'right', type: 'number', accessor: p => p.tokenPct || 0 },
+    { key: 'valuationOwnership',       label: 'Ownership',        align: 'right', type: 'number', accessor: p => p.valuationOwnership || 0 },
     { key: 'positionMark',             label: 'Current Mark',     align: 'right', type: 'number', accessor: p => p.positionMark || 0 },
     { key: 'discountedPositionMark',   label: 'Disc. NAV (Est.)', align: 'right', type: 'number', accessor: p => p.discountedPositionMark || 0 },
     { key: 'discountedMarkMultiple',   label: 'Disc. MOIC',       align: 'right', type: 'number', accessor: p => p.discountedMarkMultiple || 0 },
@@ -430,6 +516,12 @@
     const multipleCell = (m) => m == null
       ? dash
       : `<span class="${m >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(m)}</span>`;
+    const metric = (label, value) => `
+      <div class="mobile-position-metric">
+        <div class="mobile-position-label text-xs uppercase tracking-wider text-slate-500 mb-1">${label}</div>
+        <div class="mobile-position-value font-mono text-sm text-slate-100">${value}</div>
+      </div>
+    `;
 
     const rows = sorted.map(p => {
       return `
@@ -440,7 +532,7 @@
           </td>
           <td class="px-4 py-3 text-slate-200 whitespace-nowrap">${p.position}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-200 whitespace-nowrap">${p.cashDeployed > 0 ? fmtUSD(p.cashDeployed, { compact: true }) : dash}</td>
-          <td class="px-4 py-3 text-right font-mono text-slate-200 whitespace-nowrap">${p.tokenPct != null ? fmtPct(p.tokenPct, 2) : dash}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-200 whitespace-nowrap">${p.valuationOwnership != null ? fmtPct(p.valuationOwnership, 2) : dash}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-100 whitespace-nowrap">${p.positionMark != null ? fmtUSD(p.positionMark, { compact: true }) : dash}</td>
           <td class="px-4 py-3 text-right font-mono text-slate-100 whitespace-nowrap">${p.discountedPositionMark != null ? fmtUSD(p.discountedPositionMark, { compact: true }) : dash}</td>
           <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${multipleCell(p.discountedMarkMultiple)}</td>
@@ -464,6 +556,45 @@
       <td class="px-4 py-3 text-right font-mono">${multipleCell(totalDiscMultiple)}</td>
       <td class="px-4 py-3 text-right">${dash}</td>
     `;
+
+    const mobile = document.getElementById('positions-mobile');
+    if (mobile) {
+      mobile.innerHTML = sorted.map(p => `
+        <article class="mobile-position-card rounded-xl border border-slate-800 bg-slate-900/50">
+          <div class="mobile-position-header flex items-start justify-between gap-3">
+            <div>
+              <h3 class="mobile-position-title text-lg font-semibold tracking-normal text-slate-100">${p.company}</h3>
+              <p class="mobile-position-subtitle text-sm text-slate-500 mt-0.5">${p.subtitle}</p>
+            </div>
+            <div class="mobile-position-status">${statusBadge(p.status)}</div>
+          </div>
+          <div class="mobile-position-primary">
+            ${metric('Current Mark', p.positionMark != null ? fmtUSD(p.positionMark, { compact: true }) : dash)}
+            ${metric('Disc. NAV (Est.)', p.discountedPositionMark != null ? fmtUSD(p.discountedPositionMark, { compact: true }) : dash)}
+            ${metric('Disc. MOIC', multipleCell(p.discountedMarkMultiple))}
+          </div>
+          <div class="mobile-position-secondary">
+            ${metric('Stage', p.position)}
+            ${metric('Investment', p.cashDeployed > 0 ? fmtUSD(p.cashDeployed, { compact: true }) : dash)}
+            ${metric('Ownership', p.valuationOwnership != null ? fmtPct(p.valuationOwnership, 2) : dash)}
+          </div>
+        </article>
+      `).join('') + `
+        <article class="mobile-position-card mobile-position-card--total rounded-xl border border-slate-700 bg-slate-900">
+          <div class="mobile-position-header">
+            <div class="text-xs uppercase tracking-wider text-slate-500">Totals</div>
+          </div>
+          <div class="mobile-position-primary">
+            ${metric('Current Mark', fmtUSD(totalMark, { compact: true }))}
+            ${metric('Disc. NAV (Est.)', fmtUSD(totalDiscMark, { compact: true }))}
+            ${metric('Disc. MOIC', multipleCell(totalDiscMultiple))}
+          </div>
+          <div class="mobile-position-secondary mobile-position-secondary--single">
+            ${metric('Investment', fmtUSD(totalCash, { compact: true }))}
+          </div>
+        </article>
+      `;
+    }
   }
 
   function renderPositionsTable(enriched) {
@@ -487,30 +618,30 @@
       const anyLive = positions.some(p => p.tokenLive);
       const subtitle = positions[0].subtitle;
       const totalCash = positions.reduce((a, p) => a + (p.cashDeployed || 0), 0);
-      const totalTokenPct = positions.reduce((a, p) => a + (p.tokenPct || 0), 0);
+      const totalOwnership = positions.reduce((a, p) => a + (p.valuationOwnership || 0), 0);
       const totalPositionMark = positions.reduce((a, p) => a + (p.positionMark || 0), 0);
 
       const positionCards = positions.map(p => renderPositionDetail(p)).join('');
       const chartIds = positions.filter(p => p.vesting && p.vesting.startDate).map(p => p.id);
 
       return `
-        <article class="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-          <div class="p-6 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
+        <article class="company-card rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+          <div class="company-card__header p-6 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="company-card__title">
               <h3 class="text-2xl font-semibold tracking-normal text-slate-100">${company}</h3>
               <p class="text-sm text-slate-400 mt-1">${subtitle}</p>
             </div>
-            <div class="flex flex-wrap gap-6 text-right">
-              <div>
+            <div class="company-card__stats flex flex-wrap gap-6 text-right">
+              <div class="company-card__stat">
                 <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">Investment</div>
                 <div class="text-base font-mono font-medium text-slate-100">${fmtUSD(totalCash, { compact: true })}</div>
               </div>
-              <div>
+              <div class="company-card__stat">
                 <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">Ownership</div>
-                <div class="text-base font-mono font-medium text-slate-100">${fmtPct(totalTokenPct, 2)}</div>
+                <div class="text-base font-mono font-medium text-slate-100">${fmtPct(totalOwnership, 2)}</div>
               </div>
               ${totalPositionMark > 0 ? `
-                <div>
+                <div class="company-card__stat">
                   <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">Current Mark</div>
                   <div class="text-base font-mono font-medium ${anyLive ? 'text-emerald-400' : 'text-slate-100'}">${fmtUSD(totalPositionMark, { compact: true })}</div>
                 </div>
@@ -539,25 +670,24 @@
       `<span class="${m >= 1 ? 'text-emerald-400' : 'text-red-400'}">${fmtMultiple(m)}</span>`;
 
     metrics.push({ label: 'Investment', value: p.cashDeployed > 0 ? fmtUSD(p.cashDeployed) : '—' });
-    if (p.tokenPct != null) metrics.push({ label: 'Ownership', value: fmtPct(p.tokenPct, 2) });
-    if (!p.pureEquity && p.tokenCount != null) metrics.push({ label: 'Tokens', value: fmtTokens(p.tokenCount) + (p.tokenSymbol ? ' ' + p.tokenSymbol : '') });
-    const entryFDV = p.entryTokenFDV ?? p.equityFDV;
-    if (entryFDV != null) metrics.push({ label: 'Entry FDV', value: fmtUSD(entryFDV, { compact: true }) });
+    if (p.valuationOwnership != null) metrics.push({ label: 'Ownership', value: fmtPct(p.valuationOwnership, 2) });
+    if (p.valuationBasis === 'token' && p.tokenCount != null) metrics.push({ label: 'Tokens', value: fmtTokens(p.tokenCount) + (p.tokenSymbol ? ' ' + p.tokenSymbol : '') });
+    const entryFDV = p.valuationBasis === 'token'
+      ? p.entryTokenFDV ?? p.equityFDV
+      : p.equityFDV ?? p.entryTokenFDV;
+    if (entryFDV != null) metrics.push({ label: p.valuationBasis === 'token' ? 'Entry FDV' : 'Entry Valuation', value: fmtUSD(entryFDV, { compact: true }) });
     if (p.currentPrice != null) metrics.push({ label: 'Current Price', value: fmtPrice(p.currentPrice) + ' / ' + p.tokenSymbol });
-    if (p.currentTokenFDV != null) metrics.push({ label: 'Current FDV', value: fmtUSD(p.currentTokenFDV, { compact: true }) });
-    // Token Mark only shown for strategic positions where it differs from
-    // Current Mark (Current Mark = cash + Token Mark). For non-strategic
-    // positions the ratio method makes Current Mark == Token Mark, so the
-    // metric would be redundant.
-    if (p.hasStrategicGrant && p.currentTokenValue != null) metrics.push({ label: 'Token Mark', value: fmtUSD(p.currentTokenValue, { compact: true }) });
+    if (p.currentValuation != null) metrics.push({ label: p.valuationLabel, value: fmtUSD(p.currentValuation, { compact: true }) });
     if (p.positionMark != null && p.cashDeployed > 0) metrics.push({ label: 'Non-Disc. Mark', value: fmtUSD(p.positionMark, { compact: true }) });
     if (p.markMultiple != null) metrics.push({ label: 'Non-Disc. MOIC', value: coloredMultiple(p.markMultiple) });
     if (p.discountedPositionMark != null && p.cashDeployed > 0) metrics.push({ label: 'Disc. NAV (Est.)', value: fmtUSD(p.discountedPositionMark, { compact: true }) });
     if (p.discountedMarkMultiple != null) metrics.push({ label: 'Disc. MOIC', value: coloredMultiple(p.discountedMarkMultiple) });
-    if (p.hasEquity && p.equityPct != null) metrics.push({ label: 'Equity', value: fmtPct(p.equityPct, 2) + (p.equityFDV ? ' @ ' + fmtUSD(p.equityFDV, { compact: true }) : '') });
+    if (p.valuationBasis === 'equity' && p.hasEquity && p.equityPct != null) {
+      metrics.push({ label: 'Equity', value: fmtPct(p.equityPct, 2) + (p.equityFDV ? ' @ ' + fmtUSD(p.equityFDV, { compact: true }) : '') });
+    }
 
     let vestingBlock = '';
-    if (p.vesting && !p.pureEquity) {
+    if (p.vesting && p.valuationBasis === 'token') {
       const pctVested = p.vestedFraction;
       const vestedTokens = p.vestedTokens;
       const lockedTokens = (p.tokenCount || 0) - vestedTokens;
@@ -565,7 +695,7 @@
       const lockedValue = p.currentPrice != null ? lockedTokens * p.currentPrice : null;
 
       const tile = (label, mainValue, sub) => `
-        <div class="rounded-lg bg-slate-950/50 border border-slate-800 p-3">
+        <div class="vesting-tile rounded-lg bg-slate-950/50 border border-slate-800 p-3">
           <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">${label}</div>
           <div class="font-mono text-sm text-slate-100">${mainValue}</div>
           ${sub ? `<div class="text-xs text-slate-500 font-mono mt-0.5">${sub}</div>` : ''}
@@ -575,17 +705,17 @@
       vestingBlock = `
         <div class="mt-6 pt-5 border-t border-slate-800/70">
           <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 mb-3">
-            <div class="text-sm font-semibold text-slate-200">Vesting</div>
+            <div class="text-sm font-semibold text-slate-200">Investment Vesting</div>
             <div class="text-xs text-slate-500">${p.vesting.label}</div>
           </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            ${tile('Vested', fmtPct(pctVested, 1), p.tokenCount ? fmtTokens(vestedTokens) : null)}
-            ${tile('Locked', fmtPct(1 - pctVested, 1), p.tokenCount ? fmtTokens(lockedTokens) : null)}
+          <div class="vesting-tiles grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            ${tile('Vested', fmtPct(pctVested, 1))}
+            ${tile('Locked', fmtPct(1 - pctVested, 1))}
             ${tile('Liquid Value', vestedValue != null ? fmtUSD(vestedValue, { compact: true }) : '—')}
             ${tile('Locked Value', lockedValue != null ? fmtUSD(lockedValue, { compact: true }) : '—')}
           </div>
           ${p.vesting.startDate ? `
-            <div class="rounded-lg bg-slate-950/50 border border-slate-800 p-4">
+            <div class="vesting-chart-panel rounded-lg bg-slate-950/50 border border-slate-800 p-4">
               <div class="flex flex-wrap gap-2 text-xs text-slate-500 mb-3">
                 <span>${p.vesting.tgeLabel || ''}</span>
                 ${p.vesting.firstUnlockLabel ? `<span>·</span><span>${p.vesting.firstUnlockLabel}</span>` : ''}
@@ -593,21 +723,21 @@
               <div class="h-48"><canvas id="chart-${p.id}"></canvas></div>
             </div>
           ` : `
-            <div class="text-xs text-slate-500 italic">${p.vesting.tgeLabel || 'Schedule begins at TGE'}</div>
+            <div class="text-xs text-slate-500 italic">${p.vesting.tgeLabel || 'Investment schedule begins at TGE'}</div>
           `}
         </div>
       `;
     }
 
     return `
-      <div class="p-6">
-        <div class="flex items-center justify-between gap-3 mb-5">
+      <div class="position-detail p-6">
+        <div class="position-detail__header flex items-center justify-between gap-3 mb-5">
           <div class="text-sm font-semibold text-slate-200">${p.position}</div>
           ${statusBadge(p.status)}
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+        <div class="position-detail__metrics grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
           ${metrics.map(m => `
-            <div>
+            <div class="metric-cell">
               <div class="text-xs uppercase tracking-wider text-slate-500 mb-1">${m.label}</div>
               <div class="font-mono text-sm text-slate-100">${m.value}</div>
             </div>
@@ -628,7 +758,6 @@
     const data = series.map(pt => +(pt.pct * 100).toFixed(2));
 
     // Find "today" index
-    const startDate = new Date(p.vesting.startDate);
     const monthsFromStart = Math.max(0, Math.min(
       p.vesting.endMonths,
       monthsBetween(p.vesting.startDate, todayISO)
@@ -725,6 +854,7 @@
 
   // ---------- Boot ----------
   async function boot() {
+    showDisclosureAgreement();
     const prices = await fetchPrices();
     const enriched = P.positions.map(p => enrichPosition(p, prices));
     renderHeader();

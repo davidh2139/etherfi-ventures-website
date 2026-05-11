@@ -1,12 +1,12 @@
 // Portfolio data. Edit here to update positions.
-// Where a strategic token grant accompanies a cash investment (Hyperbeat,
-// ETHGas), the two tranches are reported as a single "Investment" bucket:
-// cash deployed reflects only the paid portion; token allocation and
-// equity percentage aggregate paid + granted.
+// Where additional ownership accompanies a cash investment (Hyperbeat,
+// ETHGas), the dashboard reports a single "Investment" allocation. Marks
+// use the displayed ownership percentage multiplied by token FDV when a
+// token allocation exists, otherwise by the latest equity valuation.
 
 window.PORTFOLIO = {
   fundName: 'ether.fi Ventures Fund I LP',
-  asOfISO: new Date().toISOString().slice(0, 10),
+  asOfISO: new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10),
 
   // Fund-level data feeding the LP summary metrics (Committed / Paid-In /
   // NAV / Distributions / DPI / TVPI). Paid-in capital is currently equal
@@ -31,15 +31,15 @@ window.PORTFOLIO = {
       position: 'Seed',
       status: 'Pre-TGE',
       tokenLive: false,
-      hasStrategicGrant: true,
+      hasBundledInvestmentAllocation: true,
       cashDeployed: 1_000_000,
-      tokenPct: 0.10, // 2.5% paid + 7.5% strategic grant
+      tokenPct: 0.10, // investment allocation
       tokenCount: null,
-      entryTokenFDV: 10_000_000, // blended: $1M cash / 10% combined allocation
+      entryTokenFDV: 10_000_000, // $1M cash / 10% investment allocation
       currentFDV: 40_000_000, // latest valuation (round FDV; no markup/markdown since)
       hasEquity: true,
-      equityPct: 0.10, // 2.5% paid + 7.5% strategic grant
-      equityFDV: 10_000_000, // blended: $1M cash / 10% combined equity
+      equityPct: 0.10, // investment allocation
+      equityFDV: 10_000_000, // $1M cash / 10% investment allocation
       vesting: {
         label: '12-month cliff (no release); 1/36 monthly thereafter to month 48',
         startDate: null, // TGE pending
@@ -49,8 +49,6 @@ window.PORTFOLIO = {
         endMonths: 48,
         tgeLabel: 'TGE pending',
       },
-      notes:
-        '$1M deployed for 2.5% equity + 2.5% token allocation at $40M round FDV. Strategic relationship adds an additional 7.5% equity and 7.5% token allocation with no cash cost; combined position is 10% equity / 10% token.',
     },
     {
       id: 'rise',
@@ -113,13 +111,13 @@ window.PORTFOLIO = {
       position: 'Seed',
       status: 'Live — in lock-up',
       tokenLive: true,
-      hasStrategicGrant: true,
+      hasBundledInvestmentAllocation: true,
       tokenSymbol: 'GWEI',
       totalSupply: 10_000_000_000,
       cashDeployed: 1_000_000,
-      tokenPct: 0.02, // 1% SAFT + 1% strategic grant
-      tokenCount: 200_000_000, // 100M SAFT + 100M strategic
-      entryTokenFDV: 50_000_000, // blended: $1M cash / 2% combined allocation
+      tokenPct: 0.02, // investment allocation
+      tokenCount: 200_000_000, // investment allocation
+      entryTokenFDV: 50_000_000, // $1M cash / 2% investment allocation
       entryTokenPositionValue: 1_000_000, // 2% × $50M blended = cash deployed
       hasEquity: false,
       tgeDate: '2026-01-21',
@@ -133,8 +131,6 @@ window.PORTFOLIO = {
         tgeLabel: 'TGE: Jan 21, 2026',
         firstUnlockLabel: 'First unlock: Jan 21, 2027',
       },
-      notes:
-        '$1M SAFT purchased 1% of supply (100M GWEI) at $100M round FDV. Strategic relationship adds a further 1% grant (100M GWEI) with no cash cost; combined position is 2% / 200M GWEI. The strategic tranche begins vesting Apr 15, 2026; the displayed schedule reflects the SAFT timeline.',
     },
     {
       id: 'symbiotic',
@@ -151,11 +147,8 @@ window.PORTFOLIO = {
       hasEquity: true,
       equityPct: 100_267 / 350_000_000, // cash / Series A FDV
       equityFDV: 350_000_000,
-      // Pure-equity treatment: cash is a single pro-rata claim (no separate
-      // token mark-up on top). With entry FDV == current FDV, MOIC = 1.00x.
-      // Per the Fund's ASC 820 policy, equity does not receive a DLOM, so
-      // Discounted Mark equals Current Mark here.
-      pureEquity: true,
+      // Entry and current valuation match, so ownership * valuation equals
+      // cash invested. No investment vesting schedule is currently modeled.
       vesting: null,
       notes:
         'Invested alongside Lemniscap and co-investors. Tokens pass through pro rata upon warrant exercise. Series A closed April 2025 at a $350M valuation.',
