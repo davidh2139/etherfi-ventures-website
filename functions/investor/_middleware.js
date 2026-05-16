@@ -1,12 +1,13 @@
 // Password-only auth gate for /investor/*.
-// Shared password is read from the INVESTOR_PASSWORD env var set in the
-// Cloudflare Pages project settings. On success we set a cookie whose
-// value is SHA-256(password); the middleware re-derives that hash on
-// every request and compares. Rotating INVESTOR_PASSWORD automatically
-// invalidates all outstanding sessions.
+// Shared password is read from the INVESTOR_PASSWORD environment variable.
+// On success we set a cookie whose value is SHA-256(password); the middleware
+// re-derives that hash on every request and compares. Rotating
+// INVESTOR_PASSWORD automatically invalidates all outstanding sessions.
 
 const COOKIE_NAME = "investor_auth";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const CONFIGURATION_ERROR =
+  "Investor dashboard is not configured. Set INVESTOR_PASSWORD in the hosting environment variables.";
 
 async function sha256Hex(str) {
   const bytes = new TextEncoder().encode(str);
@@ -17,14 +18,16 @@ async function sha256Hex(str) {
 }
 
 function loginPage({ error = "", redirectTo = "/investor/" } = {}) {
-  const safeRedirect = redirectTo.startsWith("/investor/") ? redirectTo : "/investor/";
+  const safeRedirect = safeInvestorRedirect(redirectTo);
+  const escapedRedirect = escapeHtml(safeRedirect);
+  const escapedError = escapeHtml(error);
   const html = `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
-  <title>Investor Access — ether.fi Ventures</title>
+  <title>Investor Access - ether.fi Ventures</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -128,15 +131,15 @@ function loginPage({ error = "", redirectTo = "/investor/" } = {}) {
 </head>
 <body>
   <form class="card" method="POST" action="/investor/login" autocomplete="off">
-    <div class="eyebrow">ether.fi Ventures · Fund I LP</div>
+    <div class="eyebrow">ether.fi Ventures &middot; Fund I LP</div>
     <h1>Investor Access</h1>
     <p class="lead">Enter the access password to view the portfolio dashboard.</p>
     <label for="password">Password</label>
     <input id="password" name="password" type="password" autofocus required />
-    <input type="hidden" name="redirect" value="${safeRedirect}" />
+    <input type="hidden" name="redirect" value="${escapedRedirect}" />
     <button type="submit">Continue</button>
-    ${error ? `<div class="error">${error}</div>` : ""}
-    <a class="back" href="/">← Back to ether.fi Ventures</a>
+    ${escapedError ? `<div class="error">${escapedError}</div>` : ""}
+    <a class="back" href="/">&larr; Back to ether.fi Ventures</a>
   </form>
 </body>
 </html>`;
@@ -151,27 +154,60 @@ function loginPage({ error = "", redirectTo = "/investor/" } = {}) {
   });
 }
 
-export async function onRequest(context) {
-  const { request, env, next } = context;
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-  if (!env.INVESTOR_PASSWORD) {
-    return new Response(
-      "Investor dashboard is not configured. Set INVESTOR_PASSWORD in Cloudflare Pages env vars.",
-      { status: 503, headers: { "Content-Type": "text/plain" } }
-    );
+function safeInvestorRedirect(value) {
+  const redirectTo = String(value || "/investor/");
+  if (
+    redirectTo === "/investor" ||
+    redirectTo.startsWith("/investor/") ||
+    redirectTo.startsWith("/investor?")
+  ) {
+    return redirectTo;
+  }
+  return "/investor/";
+}
+
+function investorPasswordFromProcessEnv() {
+  if (typeof process !== "undefined" && process.env) {
+    return process.env.INVESTOR_PASSWORD || "";
+  }
+  return "";
+}
+
+async function guardInvestorRequest({ request, password, continueRequest }) {
+  if (!request || !request.url) {
+    return new Response("Investor dashboard middleware received an invalid request.", {
+      status: 500,
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+
+  if (!password) {
+    return new Response(CONFIGURATION_ERROR, {
+      status: 503,
+      headers: { "Content-Type": "text/plain" },
+    });
   }
 
   const url = new URL(request.url);
-  const expectedHash = await sha256Hex(env.INVESTOR_PASSWORD);
+  const expectedHash = await sha256Hex(password);
 
   // Handle form submission
   if (request.method === "POST" && url.pathname === "/investor/login") {
     const form = await request.formData();
     const submitted = (form.get("password") || "").toString();
     const redirectTo = (form.get("redirect") || "/investor/").toString();
-    const safeRedirect = redirectTo.startsWith("/investor/") ? redirectTo : "/investor/";
+    const safeRedirect = safeInvestorRedirect(redirectTo);
 
-    if (submitted === env.INVESTOR_PASSWORD) {
+    if (submitted === password) {
       return new Response(null, {
         status: 303,
         headers: {
@@ -188,9 +224,34 @@ export async function onRequest(context) {
   const cookieHeader = request.headers.get("Cookie") || "";
   const match = cookieHeader.match(new RegExp(`${COOKIE_NAME}=([a-f0-9]{64})`));
   if (match && match[1] === expectedHash) {
-    return next();
+    return continueRequest ? continueRequest() : undefined;
   }
 
-  // Not authenticated — show login page
-  return loginPage({ redirectTo: url.pathname + url.search });
+  // Not authenticated - show login page.
+  const redirectTo = url.pathname === "/investor/login" ? "/investor/" : url.pathname + url.search;
+  return loginPage({ redirectTo });
 }
+
+export async function onRequest(context) {
+  // Cloudflare Pages Functions passes a context object with env and next().
+  if (context && context.request) {
+    return guardInvestorRequest({
+      request: context.request,
+      password: (context.env && context.env.INVESTOR_PASSWORD) || investorPasswordFromProcessEnv(),
+      continueRequest: typeof context.next === "function" ? context.next : undefined,
+    });
+  }
+
+  // Some hosts invoke directory _middleware files with the Request directly.
+  return middleware(context);
+}
+
+export async function middleware(request) {
+  return guardInvestorRequest({
+    request,
+    password: investorPasswordFromProcessEnv(),
+    continueRequest: undefined,
+  });
+}
+
+export default middleware;
